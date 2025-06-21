@@ -11,7 +11,6 @@ import (
 	"thop/internal/types"
 	"thop/internal/types/project"
 	"thop/internal/types/template"
-	"thop/internal/types/window"
 )
 
 type Service interface {
@@ -52,15 +51,14 @@ func (s *AppService) CreateProject(root template.Root, name project.Name) error 
 		return ErrEmptyRootPath.WithMsg("root path cannot be empty")
 	}
 
+	template := template.Template{
+		Root: root,
+	}
+
 	p := project.Project{
-		Name:    name,
-		Version: TemplateVersion,
-		Template: template.Template{
-			Root: root,
-			Windows: []window.Window{
-				{Name: "shell"},
-			},
-		},
+		Name:     name,
+		Version:  TemplateVersion,
+		Template: template.WithDefaults(),
 	}
 
 	return s.Storage.Save(&p)

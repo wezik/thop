@@ -69,22 +69,29 @@ Templates are blue-prints for your sessions, they are stored in `$XDG_CONFIG/tho
 
 Example template:
 ```yaml
-name: Example project name                  # Name used for opening / selecting the project
+name: Example project name                  # (required) Name used for opening / selecting the project
 version: 1
 template:
-  name: Optional session name               # Name of the session (optional), will use project name if not present
-  root: /home/foobar/projects/some_project  # Root directory for this session
-  run:                                      # List of commands to be executed in all windows (optional)
+  name: Optional session name               # Name of the session, will use project name if not present
+  root: /home/foobar/projects/some_project  # (required) Root directory for this session
+  run:                                      # List of commands to be executed in all windows
   - echo 'Hello world'
-  windows:                                  # List of windows to be created (1 window is required)
+  windows:                                  # List of windows to be created
   - name: window1                           # Name of the window
-    root: /optional/root/dir                # Root directory for this window (optional)
-    run:                                    # List of commands to be executed in this window (optional)
+    root: /optional/root/dir                # Root directory for this window
+    run:                                    # List of commands to be executed in this window
     - ls
+    panes:                                  # List of panes to be created
+    - name: pane1                           # Name of the pane
+      root: /optional/root/dir/pane         # Root directory for this pane
+      run:                                  # List of commands to be executed in this pane
+      - git status
   - name: window2
     run:
     - nvim
 ```
+
+All fields are optional unless stated as `(required)`
 
 ## Current state
 This project is in a somewhat early experimental stage, it's destination is set but things can still change.
@@ -97,4 +104,3 @@ This project is in a somewhat early experimental stage, it's destination is set 
 ### Ideas:
 - A general config file
 - Video showcase in README
-- Create more defaults (windows, panes), to be more independent from the "correct" template
