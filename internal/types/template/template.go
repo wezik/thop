@@ -37,19 +37,11 @@ func (t *Template) WithDefaults() Template {
 		}
 
 		if len(win.Panes) == 0 {
-			win.Panes = []pane.Pane{
-				{
-					Name: pane.Name(string(win.Name) + "-pane" + strconv.Itoa(0)),
-				},
-			}
+			win.Panes = []pane.Pane{{}}
 		}
 
-		for j := range win.Panes {
-			pan := &win.Panes[j]
-
-			if pan.Name == "" {
-				pan.Name = pane.Name(string(win.Name) + "-pane" + strconv.Itoa(j))
-			}
+		if win.Layout == "" {
+			win.Layout = window.LayoutTiled
 		}
 	}
 
