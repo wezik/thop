@@ -101,7 +101,7 @@ func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, p project.Pro
 	mainWindow := p.Template.Windows[0]
 
 	// first window gets created together with the session
-	err := m.Client.NewSession(sessionName, sessionRoot, mainWindow.Name, mainWindow.Root)
+	err := m.Client.NewSession(sessionName, sessionRoot, mainWindow)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, p project.Pro
 	for i, window := range p.Template.Windows {
 		// main window is already created, so skip it
 		if i != 0 {
-			err := m.Client.NewWindow(sessionName, sessionRoot, window.Name, window.Root)
+			err := m.Client.NewWindow(sessionName, sessionRoot, window)
 			if err != nil {
 				return err
 			}
@@ -125,6 +125,12 @@ func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, p project.Pro
 			if err := m.Client.SendKeys(sessionName, window.Name, keys); err != nil {
 				return err
 			}
+		}
+
+		// TODO: create panes before setting layout
+
+		if err := m.Client.SetLayout(sessionName, window); err != nil {
+			return err
 		}
 	}
 

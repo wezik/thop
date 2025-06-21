@@ -17,12 +17,13 @@ type TmuxClient interface {
 	AttachSession(SessionName) error
 	SwitchSession(SessionName) error
 	HasSession(SessionName) (bool, error)
-	NewSession(SessionName, template.Root, window.Name, window.Root) error
-	NewWindow(SessionName, template.Root, window.Name, window.Root) error
+	NewSession(SessionName, template.Root, window.Window) error
+	NewWindow(SessionName, template.Root, window.Window) error
 	SendKeys(SessionName, window.Name, command.Command) error
 	ListSessions() ([]SessionName, error)
 	IsTmuxServerRunning() bool
 	KillSession(SessionName) error
+	SetLayout(SessionName, window.Window) error
 }
 
 type TmuxClientImpl struct {
@@ -38,6 +39,7 @@ const (
 	ErrFailedToListSessions          problem.Key = "TMUX_FAILED_TO_LIST_SESSIONS"
 	ErrFailedToKillSession           problem.Key = "TMUX_FAILED_TO_KILL_SESSION"
 	ErrFailedToSendKeys              problem.Key = "TMUX_FAILED_TO_SEND_KEYS"
+	ErrFailedToSetLayout             problem.Key = "TMUX_FAILED_TO_SET_LAYOUT"
 	ErrTriedToBuildFromActiveSession problem.Key = "TMUX_TRIED_TO_BUILD_FROM_ACTIVE_SESSION"
 	ErrInvalidTemplateArgs           problem.Key = "TMUX_INVALID_TEMPLATE_ARGS"
 )
@@ -101,21 +103,20 @@ func (c *TmuxClientImpl) HasSession(session SessionName) (bool, error) {
 func (c *TmuxClientImpl) NewSession(
 	session SessionName,
 	root template.Root,
-	windowName window.Name,
-	windowRoot window.Root,
+	mainWindow window.Window,
 ) error {
-	if anyEmpty(string(session), string(root), string(windowName)) {
+	if anyEmpty(string(session), string(root), string(mainWindow.Name)) {
 		return ErrInvalidTemplateArgs.WithMsg("session, root and window name cannot be empty")
 	}
 
 	cmd := exec.Command("tmux", "new-session", "-d")
 	cmd.Args = append(cmd.Args, "-s", string(session))
 	cmd.Args = append(cmd.Args, "-c", string(root))
-	cmd.Args = append(cmd.Args, "-n", string(windowName))
+	cmd.Args = append(cmd.Args, "-n", string(mainWindow.Name))
 
-	if windowRoot != "" {
+	if mainWindow.Root != "" {
 		// little hack to start first window at different root than session
-		cmd.Args = append(cmd.Args, fmt.Sprintf("cd %s && exec $SHELL", windowRoot))
+		cmd.Args = append(cmd.Args, fmt.Sprintf("cd %s && exec $SHELL", mainWindow.Root))
 	}
 
 	if _, _, err := c.E.Execute(cmd); err != nil {
@@ -128,19 +129,18 @@ func (c *TmuxClientImpl) NewSession(
 func (c *TmuxClientImpl) NewWindow(
 	session SessionName,
 	root template.Root,
-	windowName window.Name,
-	windowRoot window.Root,
+	mainWindow window.Window,
 ) error {
-	if anyEmpty(string(session), string(root), string(windowName)) {
+	if anyEmpty(string(session), string(root), string(mainWindow.Name)) {
 		return ErrInvalidTemplateArgs.WithMsg("session, root and window name cannot be empty")
 	}
 
 	cmd := exec.Command("tmux", "new-window", "-d")
 	cmd.Args = append(cmd.Args, "-t", string(session))
-	cmd.Args = append(cmd.Args, "-n", string(windowName))
+	cmd.Args = append(cmd.Args, "-n", string(mainWindow.Name))
 
-	if windowRoot != "" {
-		cmd.Args = append(cmd.Args, "-c", string(windowRoot))
+	if mainWindow.Root != "" {
+		cmd.Args = append(cmd.Args, "-c", string(mainWindow.Root))
 	} else {
 		// in certain scenarios tmux will create window in working directory
 		// instead of the session root, so specify it explicitly
@@ -205,6 +205,22 @@ func (c *TmuxClientImpl) KillSession(session SessionName) error {
 	_, _, err := c.E.Execute(cmd)
 	if err != nil {
 		return ErrFailedToKillSession.WithMsg(err.Error())
+	}
+
+	return nil
+}
+
+func (c *TmuxClientImpl) SetLayout(session SessionName, window window.Window) error {
+	if anyEmpty(string(session), string(window.Name), string(window.Layout)) {
+		return ErrInvalidTemplateArgs.WithMsg("session, window name and layout cannot be empty")
+	}
+
+	combinedName := fmt.Sprintf("%s:%s", session, window.Name)
+
+	cmd := exec.Command("tmux", "select-layout", "-t", combinedName, string(window.Layout))
+	_, _, err := c.E.Execute(cmd)
+	if err != nil {
+		return ErrFailedToSetLayout.WithMsg(err.Error())
 	}
 
 	return nil
