@@ -4,6 +4,7 @@ import (
 	"testing"
 	"thop/internal/multiplexer"
 	"thop/internal/types/command"
+	"thop/internal/types/pane"
 	"thop/internal/types/project"
 	"thop/internal/types/template"
 	"thop/internal/types/window"
@@ -34,29 +35,26 @@ func (m *MockTmuxClient) HasSession(session multiplexer.SessionName) (bool, erro
 func (m *MockTmuxClient) NewSession(
 	session multiplexer.SessionName,
 	root template.Root,
-	windowName window.Name,
-	windowRoot window.Root,
+	win window.Window,
 ) error {
-	args := m.Called(session, root, windowName, windowRoot)
+	args := m.Called(session, root, win)
 	return args.Error(0)
 }
 
 func (m *MockTmuxClient) NewWindow(
 	session multiplexer.SessionName,
 	root template.Root,
-	windowName window.Name,
-	windowRoot window.Root,
+	win window.Window,
 ) error {
-	args := m.Called(session, root, windowName, windowRoot)
+	args := m.Called(session, root, win)
 	return args.Error(0)
 }
 
 func (m *MockTmuxClient) SendKeys(
-	session multiplexer.SessionName,
-	windowName window.Name,
+	paneId multiplexer.PaneId,
 	keys command.Command,
 ) error {
-	args := m.Called(session, windowName, keys)
+	args := m.Called(paneId, keys)
 	return args.Error(0)
 }
 
@@ -75,20 +73,31 @@ func (m *MockTmuxClient) KillSession(session multiplexer.SessionName) error {
 	return args.Error(0)
 }
 
+func (m *MockTmuxClient) NewPane(session multiplexer.SessionName, windowName window.Name, p pane.Pane) error {
+	args := m.Called(session, windowName, p)
+	return args.Error(0)
+}
+
+func (m *MockTmuxClient) ListPanes(session multiplexer.SessionName, windowName window.Name) ([]multiplexer.PaneId, error) {
+	args := m.Called(session, windowName)
+	return args.Get(0).([]multiplexer.PaneId), args.Error(1)
+}
+
+func (m *MockTmuxClient) SetLayout(session multiplexer.SessionName, window window.Window) error {
+	args := m.Called(session, window)
+	return args.Error(0)
+}
+
 func Test_AttachProject(t *testing.T) {
 	t.Run("assembles and attaches to session if it doesn't exist", func(t *testing.T) {
 		// given
-		uuid := project.UUID("foo")
-		name := project.Name("foo")
-		sessionName := multiplexer.SessionName(name)
+		sessionName := multiplexer.SessionName("foo")
 		root := template.Root("/home/test")
 		window1Name := window.Name("main")
-		window1Root := window.Root("/project")
 		window2Name := window.Name("baz")
-		window2Root := window.Root("")
 		project := project.Project{
-			UUID: uuid,
-			Name: name,
+			UUID: "uuid",
+			Name: "foo",
 			Template: template.Template{
 				Root:     root,
 				Commands: []command.Command{"echo hello"},
@@ -96,10 +105,19 @@ func Test_AttachProject(t *testing.T) {
 					{
 						Name: window1Name,
 						Root: "/project",
+						Panes: []pane.Pane{{}},
+						Layout: window.LayoutTiled,
 					},
 					{
 						Name:     window2Name,
 						Commands: []command.Command{"ls"},
+						Panes: []pane.Pane{
+							{},
+							{
+								Commands: []command.Command{"echo pane"},
+							},
+						},
+						Layout: window.LayoutMainVertical,
 					},
 				},
 			},
@@ -107,11 +125,24 @@ func Test_AttachProject(t *testing.T) {
 
 		mockClient := new(MockTmuxClient)
 		mockClient.On("HasSession", sessionName).Return(false, nil).Once()
-		mockClient.On("NewSession", sessionName, root, window1Name, window1Root).Return(nil).Once()
-		mockClient.On("NewWindow", sessionName, root, window2Name, window2Root).Return(nil).Once()
-		mockClient.On("SendKeys", sessionName, window1Name, command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", sessionName, window2Name, command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", sessionName, window2Name, command.Command("ls")).Return(nil).Once()
+		mockClient.On("NewSession", sessionName, root, project.Template.Windows[0]).Return(nil).Once()
+		mockClient.On("NewWindow", sessionName, root, project.Template.Windows[1]).Return(nil).Once()
+		mockClient.On("NewPane", sessionName, window2Name, project.Template.Windows[1].Panes[1]).Return(nil).Once()
+
+		mockClient.On("SetLayout", sessionName, project.Template.Windows[1]).Return(nil)
+
+		mockClient.On("ListPanes", sessionName, window1Name).Return([]multiplexer.PaneId{"A"}, nil).Once()
+		mockClient.On("ListPanes", sessionName, window2Name).Return([]multiplexer.PaneId{"B", "C"}, nil).Once()
+
+		mockClient.On("SendKeys", multiplexer.PaneId("A"), command.Command("echo hello")).Return(nil).Once()
+
+		mockClient.On("SendKeys", multiplexer.PaneId("B"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneId("B"), command.Command("ls")).Return(nil).Once()
+
+		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("ls")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("echo pane")).Return(nil).Once()
+
 		mockClient.On("AttachSession", sessionName).Return(nil).Once()
 
 		multiplexer := multiplexer.TmuxMultiplexer{
@@ -133,17 +164,6 @@ func Test_AttachProject(t *testing.T) {
 			Name: "foo",
 			Template: template.Template{
 				Root:     "/home/test",
-				Commands: []command.Command{"echo hello"},
-				Windows: []window.Window{
-					{
-						Name: "main",
-						Root: "/project",
-					},
-					{
-						Name:     "baz",
-						Commands: []command.Command{"ls"},
-					},
-				},
 			},
 		}
 
@@ -165,28 +185,33 @@ func Test_AttachProject(t *testing.T) {
 
 	t.Run("assembles and switches to session if it doesn't exist and shell is in active session", func(t *testing.T) {
 		// given
-		uuid := project.UUID("foo")
-		name := project.Name("foo")
-		sessionName := multiplexer.SessionName(name)
+		sessionName := multiplexer.SessionName("foo")
 		root := template.Root("/home/test")
 		window1Name := window.Name("main")
-		window1Root := window.Root("/project")
 		window2Name := window.Name("baz")
-		window2Root := window.Root("")
 		project := project.Project{
-			UUID: uuid,
-			Name: name,
+			UUID: "uuid",
+			Name: "foo",
 			Template: template.Template{
 				Root:     root,
 				Commands: []command.Command{"echo hello"},
 				Windows: []window.Window{
 					{
 						Name: window1Name,
-						Root: window1Root,
+						Root: "/project",
+						Panes: []pane.Pane{{}},
+						Layout: window.LayoutTiled,
 					},
 					{
 						Name:     window2Name,
 						Commands: []command.Command{"ls"},
+						Panes: []pane.Pane{
+							{},
+							{
+								Commands: []command.Command{"echo pane"},
+							},
+						},
+						Layout: window.LayoutTiled,
 					},
 				},
 			},
@@ -194,15 +219,28 @@ func Test_AttachProject(t *testing.T) {
 
 		mockClient := new(MockTmuxClient)
 		mockClient.On("HasSession", sessionName).Return(false, nil).Once()
-		mockClient.On("NewSession", sessionName, root, window1Name, window1Root).Return(nil).Once()
-		mockClient.On("NewWindow", sessionName, root, window2Name, window2Root).Return(nil).Once()
-		mockClient.On("SendKeys", sessionName, window1Name, command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", sessionName, window2Name, command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", sessionName, window2Name, command.Command("ls")).Return(nil).Once()
+		mockClient.On("NewSession", sessionName, root, project.Template.Windows[0]).Return(nil).Once()
+		mockClient.On("NewWindow", sessionName, root, project.Template.Windows[1]).Return(nil).Once()
+		mockClient.On("NewPane", sessionName, window2Name, project.Template.Windows[1].Panes[1]).Return(nil).Once()
+
+		mockClient.On("SetLayout", sessionName, project.Template.Windows[1]).Return(nil).Once()
+
+		mockClient.On("ListPanes", sessionName, window1Name).Return([]multiplexer.PaneId{"A"}, nil).Once()
+		mockClient.On("ListPanes", sessionName, window2Name).Return([]multiplexer.PaneId{"B", "C"}, nil).Once()
+
+		mockClient.On("SendKeys", multiplexer.PaneId("A"), command.Command("echo hello")).Return(nil).Once()
+
+		mockClient.On("SendKeys", multiplexer.PaneId("B"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneId("B"), command.Command("ls")).Return(nil).Once()
+
+		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("ls")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("echo pane")).Return(nil).Once()
+
 		mockClient.On("SwitchSession", sessionName).Return(nil).Once()
 
 		multiplexer := multiplexer.TmuxMultiplexer{
-			Client:            mockClient,
+			Client: mockClient,
 			ActiveTmuxSession: "/home/test",
 		}
 
@@ -221,17 +259,6 @@ func Test_AttachProject(t *testing.T) {
 			Name: "foo",
 			Template: template.Template{
 				Root:     "/home/test",
-				Commands: []command.Command{"echo hello"},
-				Windows: []window.Window{
-					{
-						Name: "main",
-						Root: "/project",
-					},
-					{
-						Name:     "baz",
-						Commands: []command.Command{"ls"},
-					},
-				},
 			},
 		}
 
@@ -260,17 +287,11 @@ func Test_AttachProject(t *testing.T) {
 			Template: template.Template{
 				Name: "bar",
 				Root: "/home/test",
-				Windows: []window.Window{
-					{
-						Name: "main",
-					},
-				},
 			},
 		}
 
 		mockClient := new(MockTmuxClient)
-		mockClient.On("HasSession", multiplexer.SessionName("bar")).Return(false, nil).Once()
-		mockClient.On("NewSession", multiplexer.SessionName("bar"), template.Root("/home/test"), window.Name("main"), window.Root("")).Return(nil).Once()
+		mockClient.On("HasSession", multiplexer.SessionName("bar")).Return(true, nil).Once()
 		mockClient.On("AttachSession", multiplexer.SessionName("bar")).Return(nil).Once()
 
 		multiplexer := multiplexer.TmuxMultiplexer{

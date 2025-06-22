@@ -18,17 +18,17 @@ type PaneId string
 
 type TmuxClient interface {
 	AttachSession(SessionName) error
-	SwitchSession(SessionName) error
 	HasSession(SessionName) (bool, error)
+	IsTmuxServerRunning() bool
+	KillSession(SessionName) error
+	ListPanes(SessionName, window.Name) ([]PaneId, error)
+	ListSessions() ([]SessionName, error)
+	NewPane(SessionName, window.Name, pane.Pane) error
 	NewSession(SessionName, template.Root, window.Window) error
 	NewWindow(SessionName, template.Root, window.Window) error
 	SendKeys(PaneId, command.Command) error
-	ListPanes(SessionName, window.Name) ([]PaneId, error)
-	ListSessions() ([]SessionName, error)
-	IsTmuxServerRunning() bool
-	KillSession(SessionName) error
-	NewPane(SessionName, window.Name, pane.Pane) error
 	SetLayout(SessionName, window.Window) error
+	SwitchSession(SessionName) error
 }
 
 type TmuxClientImpl struct {

@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"testing"
 	"thop/internal/multiplexer"
+	"thop/internal/types/window"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -163,16 +164,18 @@ func Test_Client_NewSession(t *testing.T) {
 			E: nil,
 		}
 
+		win := window.Window{Name: "win"}
+
 		// expect
-		err := client.NewSession("", "root", "win", "")
+		err := client.NewSession("", "root", win)
 		assert.NotNil(t, err, "expected error for empty session name")
 
 		// and
-		err = client.NewSession("sess", "", "win", "")
+		err = client.NewSession("sess", "", win)
 		assert.NotNil(t, err, "expected error for empty session root")
 
 		// and
-		err = client.NewSession("sess", "root", "", "")
+		err = client.NewSession("sess", "root", window.Window{})
 		assert.NotNil(t, err, "expected error for empty window name")
 	})
 
@@ -200,7 +203,8 @@ func Test_Client_NewSession(t *testing.T) {
 		}
 
 		// when
-		err := client.NewSession("mysession", "/home/test", "main", "/project")
+		win := window.Window{Name: "main", Root: "/project"}
+		err := client.NewSession("mysession", "/home/test", win)
 
 		// then
 		assert.NotNil(t, err)
@@ -231,7 +235,8 @@ func Test_Client_NewSession(t *testing.T) {
 		}
 
 		// when
-		err := client.NewSession("mysession", "/home/test", "main", "/project")
+		win := window.Window{Name: "main", Root: "/project"}
+		err := client.NewSession("mysession", "/home/test", win)
 
 		// then
 		assert.Nil(t, err)
@@ -261,7 +266,8 @@ func Test_Client_NewSession(t *testing.T) {
 		}
 
 		// when
-		err := client.NewSession("mysession", "/home/test", "main", "")
+		win := window.Window{Name: "main", Root: ""}
+		err := client.NewSession("mysession", "/home/test", win)
 
 		// then
 		assert.Nil(t, err)
@@ -277,19 +283,15 @@ func Test_TmuxClient_SendKeys(t *testing.T) {
 		}
 
 		// expect
-		err := client.SendKeys("", "win", "ls")
-		assert.NotNil(t, err, "expected error for empty session name")
+		err := client.SendKeys("", "ls")
+		assert.NotNil(t, err, "expected error for empty pane id")
 
 		// and
-		err = client.SendKeys("sess", "", "ls")
-		assert.NotNil(t, err, "expected error for empty window name")
-
-		// and
-		err = client.SendKeys("sess", "win", "")
+		err = client.SendKeys("%id", "")
 		assert.NotNil(t, err, "expected error for empty keys")
 	})
 
-	t.Run("sends keys to window", func(t *testing.T) {
+	t.Run("sends keys to pane", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
 		executor.On("Execute", mock.Anything).Return("", 0, nil)
@@ -298,7 +300,7 @@ func Test_TmuxClient_SendKeys(t *testing.T) {
 				"tmux",
 				"send-keys",
 				"-t",
-				"mysession:main",
+				"%id",
 				"ls",
 				"C-m",
 			},
@@ -309,7 +311,7 @@ func Test_TmuxClient_SendKeys(t *testing.T) {
 		}
 
 		// when
-		err := client.SendKeys("mysession", "main", "ls")
+		err := client.SendKeys("%id", "ls")
 
 		// then
 		assert.Nil(t, err)
@@ -325,15 +327,15 @@ func Test_Client_NewWindow(t *testing.T) {
 		}
 
 		// expect
-		err := client.NewWindow("", "/project", "window", "/root")
+		err := client.NewWindow("", "/project", window.Window{Name: "window", Root: "/root"})
 		assert.NotNil(t, err, "expected error for empty session name")
 
 		// and
-		err = client.NewWindow("sess", "/project", "", "/root")
+		err = client.NewWindow("sess", "/project", window.Window{Name: "", Root: "/root"})
 		assert.NotNil(t, err, "expected error for empty window name")
 
 		// and
-		err = client.NewWindow("sess", "", "window", "/root")
+		err = client.NewWindow("sess", "", window.Window{Name: "window", Root: "/root"})
 		assert.NotNil(t, err, "expected error for empty session root")
 	})
 
@@ -360,7 +362,8 @@ func Test_Client_NewWindow(t *testing.T) {
 		}
 
 		// when
-		err := client.NewWindow("mysession", "/home/test", "main", "")
+		win := window.Window{Name: "main", Root: ""}
+		err := client.NewWindow("mysession", "/home/test", win)
 
 		// then
 		assert.Nil(t, err)
@@ -390,7 +393,8 @@ func Test_Client_NewWindow(t *testing.T) {
 		}
 
 		// when
-		err := client.NewWindow("mysession", "/home/test", "main", "/project")
+		win := window.Window{Name: "main", Root: "/project"}
+		err := client.NewWindow("mysession", "/home/test", win)
 
 		// then
 		assert.Nil(t, err)
