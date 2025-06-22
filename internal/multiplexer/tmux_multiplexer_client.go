@@ -14,13 +14,16 @@ import (
 	"thop/internal/types/window"
 )
 
+type PaneId string
+
 type TmuxClient interface {
 	AttachSession(SessionName) error
 	SwitchSession(SessionName) error
 	HasSession(SessionName) (bool, error)
 	NewSession(SessionName, template.Root, window.Window) error
 	NewWindow(SessionName, template.Root, window.Window) error
-	SendKeys(SessionName, window.Name, command.Command) error
+	SendKeys(PaneId, command.Command) error
+	ListPanes(SessionName, window.Name) ([]PaneId, error)
 	ListSessions() ([]SessionName, error)
 	IsTmuxServerRunning() bool
 	KillSession(SessionName) error
@@ -39,6 +42,7 @@ const (
 	ErrFailedToCreateSession         problem.Key = "TMUX_FAILED_TO_CREATE_SESSION"
 	ErrFailedToCreateWindow          problem.Key = "TMUX_FAILED_TO_CREATE_WINDOW"
 	ErrFailedToListSessions          problem.Key = "TMUX_FAILED_TO_LIST_SESSIONS"
+	ErrFailedToListPanes             problem.Key = "TMUX_FAILED_TO_LIST_PANES"
 	ErrFailedToKillSession           problem.Key = "TMUX_FAILED_TO_KILL_SESSION"
 	ErrFailedToSendKeys              problem.Key = "TMUX_FAILED_TO_SEND_KEYS"
 	ErrFailedToSetLayout             problem.Key = "TMUX_FAILED_TO_SET_LAYOUT"
@@ -183,19 +187,12 @@ func (c *TmuxClientImpl) NewWindow(
 
 }
 
-func (c *TmuxClientImpl) SendKeys(
-	session SessionName,
-	windowName window.Name,
-	keys command.Command,
-) error {
-	if anyEmpty(string(session), string(windowName), string(keys)) {
-		return ErrInvalidTemplateArgs.WithMsg("session, window name and keys cannot be empty")
+func (c *TmuxClientImpl) SendKeys(paneId PaneId, keys command.Command) error {
+	if anyEmpty(string(paneId), string(keys)) {
+		return ErrInvalidTemplateArgs.WithMsg("pane id and keys cannot be empty")
 	}
 
-	cmd := exec.Command("tmux", "send-keys")
-
-	// tmux needs combined name of session:window to send keys to
-	cmd.Args = append(cmd.Args, "-t", fmt.Sprintf("%s:%s", session, windowName))
+	cmd := exec.Command("tmux", "send-keys", "-t", string(paneId))
 	cmd.Args = append(cmd.Args, string(keys))
 	cmd.Args = append(cmd.Args, "C-m")
 
@@ -233,6 +230,34 @@ func (c *TmuxClientImpl) ListSessions() ([]SessionName, error) {
 	return sessionNames[:len(sessionNames)-1], nil
 }
 
+func (c *TmuxClientImpl) ListPanes(session SessionName, windowName window.Name) ([]PaneId, error) {
+	if anyEmpty(string(session), string(windowName)) {
+		return nil, ErrInvalidTemplateArgs.WithMsg("session and window name cannot be empty")
+	}
+
+	cmd := exec.Command("tmux", "list-panes", "-t", fmt.Sprintf("%s:%s", session, windowName))
+	cmd.Args = append(cmd.Args, "-F", "#{pane_id}")
+
+	output, _, err := c.E.Execute(cmd)
+	if err != nil {
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return nil, ErrFailedToListPanes.WithMsg(string(err.Stderr))
+		default:
+			return nil, ErrFailedToListPanes.WithMsg(err.Error())
+		}
+	}
+
+	var paneIds []PaneId
+
+	for line := range strings.SplitSeq(output, "\n") {
+		paneIds = append(paneIds, PaneId(line))
+	}
+
+	// drop the last one, it's empty
+	return paneIds[:len(paneIds)-1], nil
+}
+
 func (c *TmuxClientImpl) KillSession(session SessionName) error {
 	if session == "" {
 		return ErrInvalidTemplateArgs.WithMsg("session name cannot be empty")
@@ -259,16 +284,15 @@ func (c *TmuxClientImpl) NewPane(session SessionName, windowName window.Name, p 
 	}
 
 	combinedName := fmt.Sprintf("%s:%s", session, windowName)
-
-	cmd := exec.Command("tmux", "split-window", "-t", combinedName)
+	cmd := exec.Command("tmux", "split-window", "-d", "-t", combinedName)
 
 	if p.Root != "" {
 		cmd.Args = append(cmd.Args, "-c", string(p.Root))
 	}
 
-	fmt.Println("running", cmd.Args)
+	_, _, err := c.E.Execute(cmd)
 
-	if _, _, err := c.E.Execute(cmd); err != nil {
+	if err != nil {
 		switch err := err.(type) {
 		case *exec.ExitError:
 			return ErrFailedToCreatePane.WithMsg(string(err.Stderr))
@@ -276,7 +300,6 @@ func (c *TmuxClientImpl) NewPane(session SessionName, windowName window.Name, p 
 			return ErrFailedToCreatePane.WithMsg(err.Error())
 		}
 	}
-
 
 	return nil
 }
