@@ -133,20 +133,20 @@ func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, pro project.P
 			}
 		}
 
-		paneIds, err := m.Client.ListPanes(sessionName, window.Name)
+		paneIDs, err := m.Client.ListPanes(sessionName, window.Name)
 		if err != nil {
 			return err
 		}
 
-		for paneIndex, paneId := range paneIds {
-			if len(paneIds) != len(window.Panes) {
+		for paneIndex, paneID := range paneIDs {
+			if len(paneIDs) != len(window.Panes) {
 				panic(fmt.Errorf("invalid state: panes count does not match window panes count"))
 			}
 
 			commands := slices.Concat(pro.Template.Commands, window.Commands, window.Panes[paneIndex].Commands)
 
 			for _, keys := range commands {
-				if err = m.Client.SendKeys(paneId, keys); err != nil {
+				if err = m.Client.SendKeys(paneID, keys); err != nil {
 					return err
 				}
 			}

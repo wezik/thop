@@ -51,10 +51,10 @@ func (m *MockTmuxClient) NewWindow(
 }
 
 func (m *MockTmuxClient) SendKeys(
-	paneId multiplexer.PaneId,
+	paneID multiplexer.PaneID,
 	keys command.Command,
 ) error {
-	args := m.Called(paneId, keys)
+	args := m.Called(paneID, keys)
 	return args.Error(0)
 }
 
@@ -78,9 +78,9 @@ func (m *MockTmuxClient) NewPane(session multiplexer.SessionName, windowName win
 	return args.Error(0)
 }
 
-func (m *MockTmuxClient) ListPanes(session multiplexer.SessionName, windowName window.Name) ([]multiplexer.PaneId, error) {
+func (m *MockTmuxClient) ListPanes(session multiplexer.SessionName, windowName window.Name) ([]multiplexer.PaneID, error) {
 	args := m.Called(session, windowName)
-	return args.Get(0).([]multiplexer.PaneId), args.Error(1)
+	return args.Get(0).([]multiplexer.PaneID), args.Error(1)
 }
 
 func (m *MockTmuxClient) SetLayout(session multiplexer.SessionName, window window.Window) error {
@@ -131,17 +131,17 @@ func Test_AttachProject(t *testing.T) {
 
 		mockClient.On("SetLayout", sessionName, project.Template.Windows[1]).Return(nil)
 
-		mockClient.On("ListPanes", sessionName, window1Name).Return([]multiplexer.PaneId{"A"}, nil).Once()
-		mockClient.On("ListPanes", sessionName, window2Name).Return([]multiplexer.PaneId{"B", "C"}, nil).Once()
+		mockClient.On("ListPanes", sessionName, window1Name).Return([]multiplexer.PaneID{"A"}, nil).Once()
+		mockClient.On("ListPanes", sessionName, window2Name).Return([]multiplexer.PaneID{"B", "C"}, nil).Once()
 
-		mockClient.On("SendKeys", multiplexer.PaneId("A"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("A"), command.Command("echo hello")).Return(nil).Once()
 
-		mockClient.On("SendKeys", multiplexer.PaneId("B"), command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", multiplexer.PaneId("B"), command.Command("ls")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("B"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("B"), command.Command("ls")).Return(nil).Once()
 
-		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("ls")).Return(nil).Once()
-		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("echo pane")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("C"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("C"), command.Command("ls")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("C"), command.Command("echo pane")).Return(nil).Once()
 
 		mockClient.On("AttachSession", sessionName).Return(nil).Once()
 
@@ -225,17 +225,17 @@ func Test_AttachProject(t *testing.T) {
 
 		mockClient.On("SetLayout", sessionName, project.Template.Windows[1]).Return(nil).Once()
 
-		mockClient.On("ListPanes", sessionName, window1Name).Return([]multiplexer.PaneId{"A"}, nil).Once()
-		mockClient.On("ListPanes", sessionName, window2Name).Return([]multiplexer.PaneId{"B", "C"}, nil).Once()
+		mockClient.On("ListPanes", sessionName, window1Name).Return([]multiplexer.PaneID{"A"}, nil).Once()
+		mockClient.On("ListPanes", sessionName, window2Name).Return([]multiplexer.PaneID{"B", "C"}, nil).Once()
 
-		mockClient.On("SendKeys", multiplexer.PaneId("A"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("A"), command.Command("echo hello")).Return(nil).Once()
 
-		mockClient.On("SendKeys", multiplexer.PaneId("B"), command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", multiplexer.PaneId("B"), command.Command("ls")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("B"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("B"), command.Command("ls")).Return(nil).Once()
 
-		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("ls")).Return(nil).Once()
-		mockClient.On("SendKeys", multiplexer.PaneId("C"), command.Command("echo pane")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("C"), command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("C"), command.Command("ls")).Return(nil).Once()
+		mockClient.On("SendKeys", multiplexer.PaneID("C"), command.Command("echo pane")).Return(nil).Once()
 
 		mockClient.On("SwitchSession", sessionName).Return(nil).Once()
 

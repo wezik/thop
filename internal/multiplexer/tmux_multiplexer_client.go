@@ -14,19 +14,19 @@ import (
 	"thop/internal/types/window"
 )
 
-type PaneId string
+type PaneID string
 
 type TmuxClient interface {
 	AttachSession(SessionName) error
 	HasSession(SessionName) (bool, error)
 	IsTmuxServerRunning() bool
 	KillSession(SessionName) error
-	ListPanes(SessionName, window.Name) ([]PaneId, error)
+	ListPanes(SessionName, window.Name) ([]PaneID, error)
 	ListSessions() ([]SessionName, error)
 	NewPane(SessionName, window.Name, pane.Pane) error
 	NewSession(SessionName, template.Root, window.Window) error
 	NewWindow(SessionName, template.Root, window.Window) error
-	SendKeys(PaneId, command.Command) error
+	SendKeys(PaneID, command.Command) error
 	SetLayout(SessionName, window.Window) error
 	SwitchSession(SessionName) error
 }
@@ -187,12 +187,12 @@ func (c *TmuxClientImpl) NewWindow(
 
 }
 
-func (c *TmuxClientImpl) SendKeys(paneId PaneId, keys command.Command) error {
-	if anyEmpty(string(paneId), string(keys)) {
+func (c *TmuxClientImpl) SendKeys(paneID PaneID, keys command.Command) error {
+	if anyEmpty(string(paneID), string(keys)) {
 		return ErrInvalidTemplateArgs.WithMsg("pane id and keys cannot be empty")
 	}
 
-	cmd := exec.Command("tmux", "send-keys", "-t", string(paneId))
+	cmd := exec.Command("tmux", "send-keys", "-t", string(paneID))
 	cmd.Args = append(cmd.Args, string(keys))
 	cmd.Args = append(cmd.Args, "C-m")
 
@@ -230,7 +230,7 @@ func (c *TmuxClientImpl) ListSessions() ([]SessionName, error) {
 	return sessionNames[:len(sessionNames)-1], nil
 }
 
-func (c *TmuxClientImpl) ListPanes(session SessionName, windowName window.Name) ([]PaneId, error) {
+func (c *TmuxClientImpl) ListPanes(session SessionName, windowName window.Name) ([]PaneID, error) {
 	if anyEmpty(string(session), string(windowName)) {
 		return nil, ErrInvalidTemplateArgs.WithMsg("session and window name cannot be empty")
 	}
@@ -248,10 +248,10 @@ func (c *TmuxClientImpl) ListPanes(session SessionName, windowName window.Name) 
 		}
 	}
 
-	var paneIds []PaneId
+	var paneIds []PaneID
 
 	for line := range strings.SplitSeq(output, "\n") {
-		paneIds = append(paneIds, PaneId(line))
+		paneIds = append(paneIds, PaneID(line))
 	}
 
 	// drop the last one, it's empty
