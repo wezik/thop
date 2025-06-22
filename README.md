@@ -104,6 +104,7 @@ This project is in a somewhat early experimental stage, it's destination is set 
 - Setting active window / pane
 - Integration tests
 - Review the Makefile
+- Fix: Trying to edit a template with invalid yaml crash
 
 ### Ideas:
 - A general config file
