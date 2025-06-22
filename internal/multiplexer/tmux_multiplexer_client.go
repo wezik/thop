@@ -63,7 +63,12 @@ func (c *TmuxClientImpl) AttachSession(session SessionName) error {
 
 	_, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return ErrFailedToAttachSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToAttachSession.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToAttachSession.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -78,7 +83,12 @@ func (c *TmuxClientImpl) SwitchSession(session SessionName) error {
 
 	_, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return ErrFailedToSwitchSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToSwitchSession.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToSwitchSession.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -97,7 +107,12 @@ func (c *TmuxClientImpl) HasSession(session SessionName) (bool, error) {
 		if exitCode == 1 {
 			return false, nil
 		}
-		return false, ErrFailedToCheckSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return false, ErrFailedToCheckSession.WithMsg(string(err.Stderr))
+		default:
+			return false, ErrFailedToCheckSession.WithMsg(err.Error())
+		}
 	}
 
 	return exitCode == 0, nil
@@ -123,7 +138,12 @@ func (c *TmuxClientImpl) NewSession(
 	}
 
 	if _, _, err := c.E.Execute(cmd); err != nil {
-		return ErrFailedToCreateSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToCreateSession.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToCreateSession.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -151,7 +171,12 @@ func (c *TmuxClientImpl) NewWindow(
 	}
 
 	if _, _, err := c.E.Execute(cmd); err != nil {
-		return ErrFailedToCreateWindow.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToCreateWindow.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToCreateWindow.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -175,7 +200,12 @@ func (c *TmuxClientImpl) SendKeys(
 	cmd.Args = append(cmd.Args, "C-m")
 
 	if _, _, err := c.E.Execute(cmd); err != nil {
-		return ErrFailedToSendKeys.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToSendKeys.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToSendKeys.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -186,7 +216,12 @@ func (c *TmuxClientImpl) ListSessions() ([]SessionName, error) {
 
 	output, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return nil, ErrFailedToListSessions.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return nil, ErrFailedToListSessions.WithMsg(string(err.Stderr))
+		default:
+			return nil, ErrFailedToListSessions.WithMsg(err.Error())
+		}
 	}
 
 	var sessionNames []SessionName
@@ -207,7 +242,12 @@ func (c *TmuxClientImpl) KillSession(session SessionName) error {
 
 	_, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return ErrFailedToKillSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToKillSession.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToKillSession.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -251,7 +291,12 @@ func (c *TmuxClientImpl) SetLayout(session SessionName, window window.Window) er
 	cmd := exec.Command("tmux", "select-layout", "-t", combinedName, string(window.Layout))
 	_, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return ErrFailedToSetLayout.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToSetLayout.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToSetLayout.WithMsg(err.Error())
+		}
 	}
 
 	return nil
