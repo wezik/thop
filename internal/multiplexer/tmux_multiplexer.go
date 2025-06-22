@@ -127,7 +127,15 @@ func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, p project.Pro
 			}
 		}
 
-		// TODO: create panes before setting layout
+		// crashes at 6 panes?
+		for j, p := range window.Panes {
+			// first pane is created together with the window, so skip it
+			if j != 0 {
+				if err := m.Client.NewPane(sessionName, window.Name, p); err != nil {
+					return err
+				}
+			}
+		}
 
 		if err := m.Client.SetLayout(sessionName, window); err != nil {
 			return err

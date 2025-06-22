@@ -9,6 +9,7 @@ import (
 	"thop/internal/executor"
 	"thop/internal/problem"
 	"thop/internal/types/command"
+	"thop/internal/types/pane"
 	"thop/internal/types/template"
 	"thop/internal/types/window"
 )
@@ -23,6 +24,7 @@ type TmuxClient interface {
 	ListSessions() ([]SessionName, error)
 	IsTmuxServerRunning() bool
 	KillSession(SessionName) error
+	NewPane(SessionName, window.Name, pane.Pane) error
 	SetLayout(SessionName, window.Window) error
 }
 
@@ -41,6 +43,7 @@ const (
 	ErrFailedToSendKeys              problem.Key = "TMUX_FAILED_TO_SEND_KEYS"
 	ErrFailedToSetLayout             problem.Key = "TMUX_FAILED_TO_SET_LAYOUT"
 	ErrTriedToBuildFromActiveSession problem.Key = "TMUX_TRIED_TO_BUILD_FROM_ACTIVE_SESSION"
+	ErrFailedToCreatePane            problem.Key = "TMUX_FAILED_TO_CREATE_PANE"
 	ErrInvalidTemplateArgs           problem.Key = "TMUX_INVALID_TEMPLATE_ARGS"
 )
 
@@ -206,6 +209,34 @@ func (c *TmuxClientImpl) KillSession(session SessionName) error {
 	if err != nil {
 		return ErrFailedToKillSession.WithMsg(err.Error())
 	}
+
+	return nil
+}
+
+func (c *TmuxClientImpl) NewPane(session SessionName, windowName window.Name, p pane.Pane) error {
+	if anyEmpty(string(session), string(windowName)) {
+		return ErrInvalidTemplateArgs.WithMsg("session and window name cannot be empty")
+	}
+
+	combinedName := fmt.Sprintf("%s:%s", session, windowName)
+
+	cmd := exec.Command("tmux", "split-window", "-t", combinedName)
+
+	if p.Root != "" {
+		cmd.Args = append(cmd.Args, "-c", string(p.Root))
+	}
+
+	fmt.Println("running", cmd.Args)
+
+	if _, _, err := c.E.Execute(cmd); err != nil {
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToCreatePane.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToCreatePane.WithMsg(err.Error())
+		}
+	}
+
 
 	return nil
 }
