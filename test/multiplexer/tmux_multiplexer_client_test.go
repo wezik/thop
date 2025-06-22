@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"testing"
 	"thop/internal/multiplexer"
+	"thop/internal/types/pane"
 	"thop/internal/types/window"
 
 	"github.com/stretchr/testify/assert"
@@ -513,5 +514,203 @@ func Test_KillSession(t *testing.T) {
 		// then
 		assert.Nil(t, err)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+}
+
+func Test_NewPane(t *testing.T) {
+	t.Run("returns error when missing required fields", func(t *testing.T) {
+		// given
+		client := multiplexer.TmuxClientImpl{
+			E: nil,
+		}
+
+		// expect
+		err := client.NewPane("", "win", pane.Pane{})
+		assert.NotNil(t, err, "expected error for empty session name")
+
+		// and
+		err = client.NewPane("sess", "", pane.Pane{})
+		assert.NotNil(t, err, "expected error for empty window name")
+	})
+
+	t.Run("creates new pane", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"split-window",
+				"-d",
+				"-t",
+				"mysession:win",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.NewPane("mysession", "win", pane.Pane{})
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("creates new pane in directory", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"split-window",
+				"-d",
+				"-t",
+				"mysession:win",
+				"-c",
+				"/project",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.NewPane("mysession", "win", pane.Pane{Root: "/project"})
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("returns mapped error if command fails", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 1, errors.New("exit code 1"))
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.NewPane("mysession", "win", pane.Pane{})
+
+		// then
+		assert.True(t, multiplexer.ErrFailedToCreatePane.Equal(err))
+		executor.AssertExpectations(t)
+	})
+}
+
+func Test_ListPanes(t *testing.T) {
+	t.Run("returns error when missing required fields", func(t *testing.T) {
+		// given
+		client := multiplexer.TmuxClientImpl{
+			E: nil,
+		}
+
+		// expect
+		_, err := client.ListPanes("", "win")
+		assert.NotNil(t, err, "expected error for empty session name")
+
+		// and
+		_, err = client.ListPanes("mysession", "")
+		assert.NotNil(t, err, "expected error for empty window name")
+	})
+
+	t.Run("returns list of panes", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("foo\nbar\nbaz\n", 0, nil).Once()
+
+		expectedCmd := [][]string{
+			{"tmux", "list-panes", "-t", "mysession:win", "-F", "#{pane_id}"},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		panes, err := client.ListPanes("mysession", "win")
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, []multiplexer.PaneID{"foo", "bar", "baz"}, panes)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("returns mapped error if command fails", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 1, errors.New("exit code 1")).Once()
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		_, err := client.ListPanes("mysession", "win")
+
+		// then
+		assert.True(t, multiplexer.ErrFailedToListPanes.Equal(err))
+		executor.AssertExpectations(t)
+	})
+}
+
+func Test_SetLayout(t *testing.T) {
+	t.Run("returns error if missing required fields", func(t *testing.T) {
+		// given
+		client := multiplexer.TmuxClientImpl{
+			E: nil,
+		}
+
+		// expect
+		err := client.SetLayout("", window.Window{})
+		assert.NotNil(t, err, "expected error for empty session name")
+
+		// and
+		err = client.SetLayout("mysession", window.Window{})
+		assert.NotNil(t, err, "expected error for empty window")
+	})
+
+	t.Run("sets layout", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		expectedCmd := [][]string{
+			{"tmux", "select-layout", "-t", "mysession:main", "tiled"},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.SetLayout("mysession", window.Window{Name: "main", Layout: window.LayoutTiled})
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("returns mapped error if command fails", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 1, errors.New("exit code 1"))
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.SetLayout("mysession", window.Window{Name: "main", Layout: window.LayoutTiled})
+
+		// then
+		assert.True(t, multiplexer.ErrFailedToSetLayout.Equal(err))
+		executor.AssertExpectations(t)
 	})
 }
