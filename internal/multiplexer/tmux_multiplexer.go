@@ -106,6 +106,13 @@ func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, pro project.P
 		return err
 	}
 
+	// from this point on, if any error occurs, kill the session
+	defer func() {
+		if err != nil {
+			m.Client.KillSession(sessionName)
+		}
+	}()
+
 	for i, window := range pro.Template.Windows {
 		// first window is created together with the session, so skip it
 		if i != 0 {

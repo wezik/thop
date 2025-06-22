@@ -1,6 +1,7 @@
 package multiplexer_test
 
 import (
+	"errors"
 	"testing"
 	"thop/internal/multiplexer"
 	"thop/internal/types/command"
@@ -154,6 +155,47 @@ func Test_AttachProject(t *testing.T) {
 
 		// then
 		assert.Nil(t, err, "Expected no error")
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("kills the session if assembling fails after session is created", func(t *testing.T) {
+		// given
+		sessionName := multiplexer.SessionName("foo")
+		root := template.Root("/home/test")
+		window1Name := window.Name("main")
+		project := project.Project{
+			UUID: "uuid",
+			Name: "foo",
+			Template: template.Template{
+				Root:     root,
+				Commands: []command.Command{"echo hello"},
+				Windows: []window.Window{
+					{
+						Name:   window1Name,
+						Root:   "/project",
+						Panes:  []pane.Pane{{}},
+						Layout: window.LayoutTiled,
+					},
+				},
+			},
+		}
+
+		mockClient := new(MockTmuxClient)
+		mockClient.On("HasSession", sessionName).Return(false, nil).Once()
+		mockClient.On("NewSession", sessionName, root, project.Template.Windows[0]).Return(nil).Once()
+		expectedErr := errors.New("some error")
+		mockClient.On("ListPanes", sessionName, window1Name).Return([]multiplexer.PaneID(nil), expectedErr).Once()
+		mockClient.On("KillSession", sessionName).Return(nil).Once()
+
+		multiplexer := multiplexer.TmuxMultiplexer{
+			Client: mockClient,
+		}
+
+		// when
+		err := multiplexer.AttachProject(project)
+
+		// then
+		assert.Equal(t, expectedErr, err)
 		mockClient.AssertExpectations(t)
 	})
 
