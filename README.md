@@ -98,9 +98,11 @@ This project is in a somewhat early experimental stage, it's destination is set 
 
 ### TODO's:
 - Pane support
+- Setting active window / pane
 - Integration tests
 - Review the Makefile
 
 ### Ideas:
 - A general config file
 - Video showcase in README
+- Opt in clearing of executed shell commands
