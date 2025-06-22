@@ -2,6 +2,7 @@ package multiplexer
 
 import (
 	"fmt"
+	"slices"
 	"thop/internal/types/project"
 )
 
@@ -88,42 +89,59 @@ func (m *TmuxMultiplexer) KillSession(p project.Project) error {
 	return nil
 }
 
-func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, p project.Project) error {
-	sessionRoot := p.Template.Root
+func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, pro project.Project) (err error) {
+	sessionRoot := pro.Template.Root
 	if sessionRoot == "" {
 		return ErrInvalidTemplateArgs.WithMsg("session root cannot be empty")
 	}
 
-	if len(p.Template.Windows) == 0 {
+	if len(pro.Template.Windows) == 0 {
 		return ErrInvalidTemplateArgs.WithMsg("project template needs at least one window to be created")
 	}
 
-	mainWindow := p.Template.Windows[0]
+	mainWindow := pro.Template.Windows[0]
 
 	// first window gets created together with the session
-	err := m.Client.NewSession(sessionName, sessionRoot, mainWindow.Name, mainWindow.Root)
-	if err != nil {
+	if err = m.Client.NewSession(sessionName, sessionRoot, mainWindow); err != nil {
 		return err
 	}
 
-	for i, window := range p.Template.Windows {
-		// main window is already created, so skip it
+	for i, window := range pro.Template.Windows {
+		// first window is created together with the session, so skip it
 		if i != 0 {
-			err := m.Client.NewWindow(sessionName, sessionRoot, window.Name, window.Root)
-			if err != nil {
+			if err = m.Client.NewWindow(sessionName, sessionRoot, window); err != nil {
 				return err
 			}
 		}
 
-		for _, keys := range p.Template.Commands {
-			if err := m.Client.SendKeys(sessionName, window.Name, keys); err != nil {
+		// first pane is created together with the window, so skip it
+		for _, p := range window.Panes[1:] {
+			if err = m.Client.NewPane(sessionName, window.Name, p); err != nil {
+				return err
+			}
+
+			// set layout after each pane to ensure, layout is up to its limits
+			if err = m.Client.SetLayout(sessionName, window); err != nil {
 				return err
 			}
 		}
 
-		for _, keys := range window.Commands {
-			if err := m.Client.SendKeys(sessionName, window.Name, keys); err != nil {
-				return err
+		paneIDs, err := m.Client.ListPanes(sessionName, window.Name)
+		if err != nil {
+			return err
+		}
+
+		for paneIndex, paneID := range paneIDs {
+			if len(paneIDs) != len(window.Panes) {
+				panic(fmt.Errorf("invalid state: panes count does not match window panes count"))
+			}
+
+			commands := slices.Concat(pro.Template.Commands, window.Commands, window.Panes[paneIndex].Commands)
+
+			for _, keys := range commands {
+				if err = m.Client.SendKeys(paneID, keys); err != nil {
+					return err
+				}
 			}
 		}
 	}

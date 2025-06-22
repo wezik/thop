@@ -9,20 +9,26 @@ import (
 	"thop/internal/executor"
 	"thop/internal/problem"
 	"thop/internal/types/command"
+	"thop/internal/types/pane"
 	"thop/internal/types/template"
 	"thop/internal/types/window"
 )
 
+type PaneID string
+
 type TmuxClient interface {
 	AttachSession(SessionName) error
-	SwitchSession(SessionName) error
 	HasSession(SessionName) (bool, error)
-	NewSession(SessionName, template.Root, window.Name, window.Root) error
-	NewWindow(SessionName, template.Root, window.Name, window.Root) error
-	SendKeys(SessionName, window.Name, command.Command) error
-	ListSessions() ([]SessionName, error)
 	IsTmuxServerRunning() bool
 	KillSession(SessionName) error
+	ListPanes(SessionName, window.Name) ([]PaneID, error)
+	ListSessions() ([]SessionName, error)
+	NewPane(SessionName, window.Name, pane.Pane) error
+	NewSession(SessionName, template.Root, window.Window) error
+	NewWindow(SessionName, template.Root, window.Window) error
+	SendKeys(PaneID, command.Command) error
+	SetLayout(SessionName, window.Window) error
+	SwitchSession(SessionName) error
 }
 
 type TmuxClientImpl struct {
@@ -36,9 +42,12 @@ const (
 	ErrFailedToCreateSession         problem.Key = "TMUX_FAILED_TO_CREATE_SESSION"
 	ErrFailedToCreateWindow          problem.Key = "TMUX_FAILED_TO_CREATE_WINDOW"
 	ErrFailedToListSessions          problem.Key = "TMUX_FAILED_TO_LIST_SESSIONS"
+	ErrFailedToListPanes             problem.Key = "TMUX_FAILED_TO_LIST_PANES"
 	ErrFailedToKillSession           problem.Key = "TMUX_FAILED_TO_KILL_SESSION"
 	ErrFailedToSendKeys              problem.Key = "TMUX_FAILED_TO_SEND_KEYS"
+	ErrFailedToSetLayout             problem.Key = "TMUX_FAILED_TO_SET_LAYOUT"
 	ErrTriedToBuildFromActiveSession problem.Key = "TMUX_TRIED_TO_BUILD_FROM_ACTIVE_SESSION"
+	ErrFailedToCreatePane            problem.Key = "TMUX_FAILED_TO_CREATE_PANE"
 	ErrInvalidTemplateArgs           problem.Key = "TMUX_INVALID_TEMPLATE_ARGS"
 )
 
@@ -58,7 +67,12 @@ func (c *TmuxClientImpl) AttachSession(session SessionName) error {
 
 	_, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return ErrFailedToAttachSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToAttachSession.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToAttachSession.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -73,7 +87,12 @@ func (c *TmuxClientImpl) SwitchSession(session SessionName) error {
 
 	_, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return ErrFailedToSwitchSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToSwitchSession.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToSwitchSession.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -92,7 +111,12 @@ func (c *TmuxClientImpl) HasSession(session SessionName) (bool, error) {
 		if exitCode == 1 {
 			return false, nil
 		}
-		return false, ErrFailedToCheckSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return false, ErrFailedToCheckSession.WithMsg(string(err.Stderr))
+		default:
+			return false, ErrFailedToCheckSession.WithMsg(err.Error())
+		}
 	}
 
 	return exitCode == 0, nil
@@ -101,25 +125,29 @@ func (c *TmuxClientImpl) HasSession(session SessionName) (bool, error) {
 func (c *TmuxClientImpl) NewSession(
 	session SessionName,
 	root template.Root,
-	windowName window.Name,
-	windowRoot window.Root,
+	mainWindow window.Window,
 ) error {
-	if anyEmpty(string(session), string(root), string(windowName)) {
+	if anyEmpty(string(session), string(root), string(mainWindow.Name)) {
 		return ErrInvalidTemplateArgs.WithMsg("session, root and window name cannot be empty")
 	}
 
 	cmd := exec.Command("tmux", "new-session", "-d")
 	cmd.Args = append(cmd.Args, "-s", string(session))
 	cmd.Args = append(cmd.Args, "-c", string(root))
-	cmd.Args = append(cmd.Args, "-n", string(windowName))
+	cmd.Args = append(cmd.Args, "-n", string(mainWindow.Name))
 
-	if windowRoot != "" {
+	if mainWindow.Root != "" {
 		// little hack to start first window at different root than session
-		cmd.Args = append(cmd.Args, fmt.Sprintf("cd %s && exec $SHELL", windowRoot))
+		cmd.Args = append(cmd.Args, fmt.Sprintf("cd %s && exec $SHELL", mainWindow.Root))
 	}
 
 	if _, _, err := c.E.Execute(cmd); err != nil {
-		return ErrFailedToCreateSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToCreateSession.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToCreateSession.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -128,19 +156,18 @@ func (c *TmuxClientImpl) NewSession(
 func (c *TmuxClientImpl) NewWindow(
 	session SessionName,
 	root template.Root,
-	windowName window.Name,
-	windowRoot window.Root,
+	mainWindow window.Window,
 ) error {
-	if anyEmpty(string(session), string(root), string(windowName)) {
+	if anyEmpty(string(session), string(root), string(mainWindow.Name)) {
 		return ErrInvalidTemplateArgs.WithMsg("session, root and window name cannot be empty")
 	}
 
 	cmd := exec.Command("tmux", "new-window", "-d")
 	cmd.Args = append(cmd.Args, "-t", string(session))
-	cmd.Args = append(cmd.Args, "-n", string(windowName))
+	cmd.Args = append(cmd.Args, "-n", string(mainWindow.Name))
 
-	if windowRoot != "" {
-		cmd.Args = append(cmd.Args, "-c", string(windowRoot))
+	if mainWindow.Root != "" {
+		cmd.Args = append(cmd.Args, "-c", string(mainWindow.Root))
 	} else {
 		// in certain scenarios tmux will create window in working directory
 		// instead of the session root, so specify it explicitly
@@ -148,31 +175,34 @@ func (c *TmuxClientImpl) NewWindow(
 	}
 
 	if _, _, err := c.E.Execute(cmd); err != nil {
-		return ErrFailedToCreateWindow.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToCreateWindow.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToCreateWindow.WithMsg(err.Error())
+		}
 	}
 
 	return nil
 
 }
 
-func (c *TmuxClientImpl) SendKeys(
-	session SessionName,
-	windowName window.Name,
-	keys command.Command,
-) error {
-	if anyEmpty(string(session), string(windowName), string(keys)) {
-		return ErrInvalidTemplateArgs.WithMsg("session, window name and keys cannot be empty")
+func (c *TmuxClientImpl) SendKeys(paneID PaneID, keys command.Command) error {
+	if anyEmpty(string(paneID), string(keys)) {
+		return ErrInvalidTemplateArgs.WithMsg("pane id and keys cannot be empty")
 	}
 
-	cmd := exec.Command("tmux", "send-keys")
-
-	// tmux needs combined name of session:window to send keys to
-	cmd.Args = append(cmd.Args, "-t", fmt.Sprintf("%s:%s", session, windowName))
+	cmd := exec.Command("tmux", "send-keys", "-t", string(paneID))
 	cmd.Args = append(cmd.Args, string(keys))
 	cmd.Args = append(cmd.Args, "C-m")
 
 	if _, _, err := c.E.Execute(cmd); err != nil {
-		return ErrFailedToSendKeys.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToSendKeys.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToSendKeys.WithMsg(err.Error())
+		}
 	}
 
 	return nil
@@ -183,7 +213,12 @@ func (c *TmuxClientImpl) ListSessions() ([]SessionName, error) {
 
 	output, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return nil, ErrFailedToListSessions.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return nil, ErrFailedToListSessions.WithMsg(string(err.Stderr))
+		default:
+			return nil, ErrFailedToListSessions.WithMsg(err.Error())
+		}
 	}
 
 	var sessionNames []SessionName
@@ -195,6 +230,34 @@ func (c *TmuxClientImpl) ListSessions() ([]SessionName, error) {
 	return sessionNames[:len(sessionNames)-1], nil
 }
 
+func (c *TmuxClientImpl) ListPanes(session SessionName, windowName window.Name) ([]PaneID, error) {
+	if anyEmpty(string(session), string(windowName)) {
+		return nil, ErrInvalidTemplateArgs.WithMsg("session and window name cannot be empty")
+	}
+
+	cmd := exec.Command("tmux", "list-panes", "-t", fmt.Sprintf("%s:%s", session, windowName))
+	cmd.Args = append(cmd.Args, "-F", "#{pane_id}")
+
+	output, _, err := c.E.Execute(cmd)
+	if err != nil {
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return nil, ErrFailedToListPanes.WithMsg(string(err.Stderr))
+		default:
+			return nil, ErrFailedToListPanes.WithMsg(err.Error())
+		}
+	}
+
+	var paneIds []PaneID
+
+	for line := range strings.SplitSeq(output, "\n") {
+		paneIds = append(paneIds, PaneID(line))
+	}
+
+	// drop the last one, it's empty
+	return paneIds[:len(paneIds)-1], nil
+}
+
 func (c *TmuxClientImpl) KillSession(session SessionName) error {
 	if session == "" {
 		return ErrInvalidTemplateArgs.WithMsg("session name cannot be empty")
@@ -204,7 +267,59 @@ func (c *TmuxClientImpl) KillSession(session SessionName) error {
 
 	_, _, err := c.E.Execute(cmd)
 	if err != nil {
-		return ErrFailedToKillSession.WithMsg(err.Error())
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToKillSession.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToKillSession.WithMsg(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (c *TmuxClientImpl) NewPane(session SessionName, windowName window.Name, p pane.Pane) error {
+	if anyEmpty(string(session), string(windowName)) {
+		return ErrInvalidTemplateArgs.WithMsg("session and window name cannot be empty")
+	}
+
+	combinedName := fmt.Sprintf("%s:%s", session, windowName)
+	cmd := exec.Command("tmux", "split-window", "-d", "-t", combinedName)
+
+	if p.Root != "" {
+		cmd.Args = append(cmd.Args, "-c", string(p.Root))
+	}
+
+	_, _, err := c.E.Execute(cmd)
+
+	if err != nil {
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToCreatePane.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToCreatePane.WithMsg(err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (c *TmuxClientImpl) SetLayout(session SessionName, window window.Window) error {
+	if anyEmpty(string(session), string(window.Name), string(window.Layout)) {
+		return ErrInvalidTemplateArgs.WithMsg("session, window name and layout cannot be empty")
+	}
+
+	combinedName := fmt.Sprintf("%s:%s", session, window.Name)
+
+	cmd := exec.Command("tmux", "select-layout", "-t", combinedName, string(window.Layout))
+	_, _, err := c.E.Execute(cmd)
+	if err != nil {
+		switch err := err.(type) {
+		case *exec.ExitError:
+			return ErrFailedToSetLayout.WithMsg(string(err.Stderr))
+		default:
+			return ErrFailedToSetLayout.WithMsg(err.Error())
+		}
 	}
 
 	return nil
