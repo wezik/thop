@@ -103,9 +103,9 @@ func Test_AttachProject(t *testing.T) {
 				Commands: []command.Command{"echo hello"},
 				Windows: []window.Window{
 					{
-						Name: window1Name,
-						Root: "/project",
-						Panes: []pane.Pane{{}},
+						Name:   window1Name,
+						Root:   "/project",
+						Panes:  []pane.Pane{{}},
 						Layout: window.LayoutTiled,
 					},
 					{
@@ -163,7 +163,7 @@ func Test_AttachProject(t *testing.T) {
 			UUID: "foo",
 			Name: "foo",
 			Template: template.Template{
-				Root:     "/home/test",
+				Root: "/home/test",
 			},
 		}
 
@@ -197,9 +197,9 @@ func Test_AttachProject(t *testing.T) {
 				Commands: []command.Command{"echo hello"},
 				Windows: []window.Window{
 					{
-						Name: window1Name,
-						Root: "/project",
-						Panes: []pane.Pane{{}},
+						Name:   window1Name,
+						Root:   "/project",
+						Panes:  []pane.Pane{{}},
 						Layout: window.LayoutTiled,
 					},
 					{
@@ -240,7 +240,7 @@ func Test_AttachProject(t *testing.T) {
 		mockClient.On("SwitchSession", sessionName).Return(nil).Once()
 
 		multiplexer := multiplexer.TmuxMultiplexer{
-			Client: mockClient,
+			Client:            mockClient,
 			ActiveTmuxSession: "/home/test",
 		}
 
@@ -258,7 +258,7 @@ func Test_AttachProject(t *testing.T) {
 			UUID: "foo",
 			Name: "foo",
 			Template: template.Template{
-				Root:     "/home/test",
+				Root: "/home/test",
 			},
 		}
 
