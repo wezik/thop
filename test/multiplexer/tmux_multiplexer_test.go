@@ -74,8 +74,8 @@ func (m *MockTmuxClient) KillSession(session multiplexer.SessionName) error {
 	return args.Error(0)
 }
 
-func (m *MockTmuxClient) NewPane(session multiplexer.SessionName, windowName window.Name, p pane.Pane) error {
-	args := m.Called(session, windowName, p)
+func (m *MockTmuxClient) NewPane(session multiplexer.SessionName, win window.Name, p pane.Pane, fallbackRoot string) error {
+	args := m.Called(session, win, p, fallbackRoot)
 	return args.Error(0)
 }
 
@@ -128,7 +128,7 @@ func Test_AttachProject(t *testing.T) {
 		mockClient.On("HasSession", sessionName).Return(false, nil).Once()
 		mockClient.On("NewSession", sessionName, root, project.Template.Windows[0]).Return(nil).Once()
 		mockClient.On("NewWindow", sessionName, root, project.Template.Windows[1]).Return(nil).Once()
-		mockClient.On("NewPane", sessionName, window2Name, project.Template.Windows[1].Panes[1]).Return(nil).Once()
+		mockClient.On("NewPane", sessionName, window2Name, project.Template.Windows[1].Panes[1], string(root)).Return(nil).Once()
 
 		mockClient.On("SetLayout", sessionName, project.Template.Windows[1]).Return(nil)
 
@@ -263,9 +263,9 @@ func Test_AttachProject(t *testing.T) {
 		mockClient.On("HasSession", sessionName).Return(false, nil).Once()
 		mockClient.On("NewSession", sessionName, root, project.Template.Windows[0]).Return(nil).Once()
 		mockClient.On("NewWindow", sessionName, root, project.Template.Windows[1]).Return(nil).Once()
-		mockClient.On("NewPane", sessionName, window2Name, project.Template.Windows[1].Panes[1]).Return(nil).Once()
+		mockClient.On("NewPane", sessionName, window2Name, project.Template.Windows[1].Panes[1], string(root)).Return(nil).Once()
 
-		mockClient.On("SetLayout", sessionName, project.Template.Windows[1]).Return(nil).Once()
+		mockClient.On("SetLayout", sessionName, project.Template.Windows[1]).Return(nil)
 
 		mockClient.On("ListPanes", sessionName, window1Name).Return([]multiplexer.PaneID{"A"}, nil).Once()
 		mockClient.On("ListPanes", sessionName, window2Name).Return([]multiplexer.PaneID{"B", "C"}, nil).Once()

@@ -525,41 +525,19 @@ func Test_NewPane(t *testing.T) {
 		}
 
 		// expect
-		err := client.NewPane("", "win", pane.Pane{})
+		err := client.NewPane("", "win", pane.Pane{}, "/home/test")
 		assert.NotNil(t, err, "expected error for empty session name")
 
 		// and
-		err = client.NewPane("sess", "", pane.Pane{})
+		err = client.NewPane("sess", "", pane.Pane{}, "/home/test")
 		assert.NotNil(t, err, "expected error for empty window name")
+
+		// and
+		err = client.NewPane("sess", "win", pane.Pane{}, "")
+		assert.NotNil(t, err, "expected error for empty fallback root")
 	})
 
 	t.Run("creates new pane", func(t *testing.T) {
-		// given
-		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("", 0, nil)
-		expectedCmd := [][]string{
-			{
-				"tmux",
-				"split-window",
-				"-d",
-				"-t",
-				"mysession:win",
-			},
-		}
-
-		client := multiplexer.TmuxClientImpl{
-			E: executor,
-		}
-
-		// when
-		err := client.NewPane("mysession", "win", pane.Pane{})
-
-		// then
-		assert.Nil(t, err)
-		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
-	})
-
-	t.Run("creates new pane in directory", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
 		executor.On("Execute", mock.Anything).Return("", 0, nil)
@@ -580,7 +558,35 @@ func Test_NewPane(t *testing.T) {
 		}
 
 		// when
-		err := client.NewPane("mysession", "win", pane.Pane{Root: "/project"})
+		err := client.NewPane("mysession", "win", pane.Pane{Root: "/project"}, "/home/test")
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("creates new pane in fallback root if pane root is empty", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"split-window",
+				"-d",
+				"-t",
+				"mysession:win",
+				"-c",
+				"/home/test",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.NewPane("mysession", "win", pane.Pane{}, "/home/test")
 
 		// then
 		assert.Nil(t, err)
@@ -597,7 +603,7 @@ func Test_NewPane(t *testing.T) {
 		}
 
 		// when
-		err := client.NewPane("mysession", "win", pane.Pane{})
+		err := client.NewPane("mysession", "win", pane.Pane{}, "/home/test")
 
 		// then
 		assert.True(t, multiplexer.ErrFailedToCreatePane.Equal(err))
