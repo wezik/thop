@@ -123,7 +123,15 @@ func (m *TmuxMultiplexer) assembleSession(sessionName SessionName, pro project.P
 
 		// first pane is created together with the window, so skip it
 		for _, p := range window.Panes[1:] {
-			if err = m.Client.NewPane(sessionName, window.Name, p); err != nil {
+
+			var fallbackRoot string
+			if window.Root != "" {
+				fallbackRoot = string(window.Root)
+			} else {
+				fallbackRoot = string(sessionRoot)
+			}
+
+			if err = m.Client.NewPane(sessionName, window.Name, p, fallbackRoot); err != nil {
 				return err
 			}
 

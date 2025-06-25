@@ -23,7 +23,7 @@ type TmuxClient interface {
 	KillSession(SessionName) error
 	ListPanes(SessionName, window.Name) ([]PaneID, error)
 	ListSessions() ([]SessionName, error)
-	NewPane(SessionName, window.Name, pane.Pane) error
+	NewPane(SessionName, window.Name, pane.Pane, string) error
 	NewSession(SessionName, template.Root, window.Window) error
 	NewWindow(SessionName, template.Root, window.Window) error
 	SendKeys(PaneID, command.Command) error
@@ -278,17 +278,22 @@ func (c *TmuxClientImpl) KillSession(session SessionName) error {
 	return nil
 }
 
-func (c *TmuxClientImpl) NewPane(session SessionName, windowName window.Name, p pane.Pane) error {
-	if anyEmpty(string(session), string(windowName)) {
-		return ErrInvalidTemplateArgs.WithMsg("session and window name cannot be empty")
+func (c *TmuxClientImpl) NewPane(session SessionName, windowName window.Name, p pane.Pane, fallbackRoot string) error {
+	if anyEmpty(string(session), string(windowName), string(fallbackRoot)) {
+		return ErrInvalidTemplateArgs.WithMsg("session, window name and fallback root cannot be empty")
 	}
 
 	combinedName := fmt.Sprintf("%s:%s", session, windowName)
 	cmd := exec.Command("tmux", "split-window", "-d", "-t", combinedName)
 
+	var root string
 	if p.Root != "" {
-		cmd.Args = append(cmd.Args, "-c", string(p.Root))
+		root = string(p.Root)
+	} else {
+		root = fallbackRoot
 	}
+
+	cmd.Args = append(cmd.Args, "-c", root)
 
 	_, _, err := c.E.Execute(cmd)
 
