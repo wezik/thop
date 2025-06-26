@@ -89,6 +89,7 @@ func (c *TmuxClientImpl) HasSession(sn SessionName) (bool, error) {
 
 func (c *TmuxClientImpl) NewSession(sn SessionName, t template.Template) (WindowID, PaneID, error) {
 	mw := t.Windows[0]
+	mp := mw.Panes[0]
 
 	cmd := exec.Command("tmux", "new-session", "-d")
 	cmd.Args = append(cmd.Args, "-s", string(sn))
@@ -98,12 +99,14 @@ func (c *TmuxClientImpl) NewSession(sn SessionName, t template.Template) (Window
 		cmd.Args = append(cmd.Args, "-n", string(mw.Name))
 	}
 
-	if mw.Root != "" {
-		// little hack to start first window at different root than session
+	cmd.Args = append(cmd.Args, "-P", "-F", "#{window_id} #{pane_id}")
+
+	// little hack to start first window at different root than session
+	if mp.Root != "" {
+		cmd.Args = append(cmd.Args, fmt.Sprintf("cd %s && exec $SHELL", mp.Root))
+	} else if mw.Root != "" {
 		cmd.Args = append(cmd.Args, fmt.Sprintf("cd %s && exec $SHELL", mw.Root))
 	}
-
-	cmd.Args = append(cmd.Args, "-P", "-F", "#{window_id} #{pane_id}")
 
 	o, _, err := c.E.Execute(cmd)
 	if err != nil {

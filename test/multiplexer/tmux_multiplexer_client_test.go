@@ -138,8 +138,8 @@ func Test_Client_NewSession(t *testing.T) {
 				"/home/test",
 				"-n",
 				"main",
-				"cd /project && exec $SHELL",
 				"-P", "-F", "#{window_id} #{pane_id}",
+				"cd /project && exec $SHELL",
 			},
 		}
 
@@ -151,7 +151,11 @@ func Test_Client_NewSession(t *testing.T) {
 		tmpl := template.Template{
 			Root: "/home/test",
 			Windows: []window.Window{
-				{Name: "main", Root: "/project"},
+				{
+					Name:  "main",
+					Root:  "/project",
+					Panes: []pane.Pane{{}},
+				},
 			},
 		}
 		_, _, err := client.NewSession("mysession", tmpl)
@@ -176,8 +180,8 @@ func Test_Client_NewSession(t *testing.T) {
 				"/home/test",
 				"-n",
 				"main",
-				"cd /project && exec $SHELL",
 				"-P", "-F", "#{window_id} #{pane_id}",
+				"cd /project && exec $SHELL",
 			},
 		}
 
@@ -189,7 +193,11 @@ func Test_Client_NewSession(t *testing.T) {
 		tmpl := template.Template{
 			Root: "/home/test",
 			Windows: []window.Window{
-				{Name: "main", Root: "/project"},
+				{
+					Name:  "main",
+					Root:  "/project",
+					Panes: []pane.Pane{{}},
+				},
 			},
 		}
 		wID, pID, err := client.NewSession("mysession", tmpl)
@@ -228,13 +236,65 @@ func Test_Client_NewSession(t *testing.T) {
 		tmpl := template.Template{
 			Root: "/home/test",
 			Windows: []window.Window{
-				{Name: "main", Root: ""},
+				{
+					Name:  "main",
+					Root:  "",
+					Panes: []pane.Pane{{}},
+				},
 			},
 		}
 		_, _, err := client.NewSession("mysession", tmpl)
 
 		// then
 		assert.Nil(t, err)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("creates new session with pane root", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"new-session",
+				"-d",
+				"-s",
+				"mysession",
+				"-c",
+				"/home/test",
+				"-n",
+				"main",
+				"-P", "-F", "#{window_id} #{pane_id}",
+				"cd /project/pane && exec $SHELL",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		tmpl := template.Template{
+			Root: "/home/test",
+			Windows: []window.Window{
+				{
+					Name: "main",
+					Root: "/project",
+					Panes: []pane.Pane{
+						{
+							Root: "/project/pane",
+						},
+					},
+				},
+			},
+		}
+		wID, pID, err := client.NewSession("mysession", tmpl)
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
 }
@@ -293,7 +353,7 @@ func Test_Client_NewWindow(t *testing.T) {
 		}
 
 		// when
-		win := window.Window{Name: "main", Root: ""}
+		win := window.Window{Name: "main", Root: "", Panes: []pane.Pane{{}}}
 		wID, pID, err := client.NewWindow("mysession", "/home/test", win)
 
 		// then
@@ -327,7 +387,50 @@ func Test_Client_NewWindow(t *testing.T) {
 		}
 
 		// when
-		win := window.Window{Name: "main", Root: "/project"}
+		win := window.Window{Name: "main", Root: "/project", Panes: []pane.Pane{{}}}
+		wID, pID, err := client.NewWindow("mysession", "/home/test", win)
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("creates new window with pane root", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"new-window",
+				"-d",
+				"-t",
+				"mysession",
+				"-n",
+				"main",
+				"-c",
+				"/project",
+				"-P", "-F", "#{window_id} #{pane_id}",
+				"cd /project/pane && exec $SHELL",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		win := window.Window{
+			Name: "main",
+			Root: "/project",
+			Panes: []pane.Pane{
+				{
+					Root: "/project/pane",
+				},
+			},
+		}
 		wID, pID, err := client.NewWindow("mysession", "/home/test", win)
 
 		// then
