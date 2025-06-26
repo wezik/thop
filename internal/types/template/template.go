@@ -1,9 +1,7 @@
 package template
 
 import (
-	"strconv"
 	"thop/internal/types/command"
-	"thop/internal/types/pane"
 	"thop/internal/types/window"
 )
 
@@ -30,20 +28,26 @@ func (t *Template) WithDefaults() Template {
 	}
 
 	for i := range newTemplate.Windows {
-		win := &newTemplate.Windows[i]
-
-		if win.Name == "" {
-			win.Name = window.Name("window" + strconv.Itoa(i))
-		}
-
-		if len(win.Panes) == 0 {
-			win.Panes = []pane.Pane{{}}
-		}
-
-		if win.Layout == "" {
-			win.Layout = window.LayoutTiled
-		}
+		newTemplate.Windows[i] = newTemplate.Windows[i].WithDefaults()
 	}
 
 	return newTemplate
+}
+
+func (t *Template) IsValid() bool {
+	if t.Root == "" {
+		return false
+	}
+
+	if len(t.Windows) < 1 { // at least main window is required
+		return false
+	}
+
+	for _, win := range t.Windows {
+		if !win.IsValid() {
+			return false
+		}
+	}
+
+	return true
 }

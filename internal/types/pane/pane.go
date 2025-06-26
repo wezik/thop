@@ -9,3 +9,8 @@ type Pane struct {
 	Commands []command.Command `yaml:"run,omitempty"`
 	Active   bool              `yaml:"active,omitempty"`
 }
+
+func (p *Pane) IsValid() bool {
+	// For now it is always valid
+	return true
+}

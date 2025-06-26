@@ -78,7 +78,11 @@ func (s *YamlStorage) List() ([]project.Project, error) {
 		}
 
 		p.UUID = project.UUID(dirName)
-		projects = append(projects, p)
+		p = p.WithDefaults()
+
+		if p.IsValid() {
+			projects = append(projects, p)
+		}
 	}
 
 	return projects, nil
@@ -90,9 +94,13 @@ func (s *YamlStorage) Find(name project.Name) (project.Project, error) {
 		return project.Project{}, err
 	}
 
-	for _, project := range projects {
-		if project.Name == name {
-			return project, nil
+	for _, p := range projects {
+		if p.Name == name {
+			p = p.WithDefaults()
+			if !p.IsValid() {
+				return project.Project{}, ErrProjectNotFound.WithMsg("project", name, "is invalid")
+			}
+			return p, nil
 		}
 	}
 

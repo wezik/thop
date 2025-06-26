@@ -13,6 +13,7 @@ type CommandExecutor interface {
 type ShellExecutor struct{}
 
 func (s *ShellExecutor) Execute(cmd *exec.Cmd) (string, int, error) {
+	println(cmd.String())
 	res, err := cmd.Output()
 	return string(res), cmd.ProcessState.ExitCode(), err
 }

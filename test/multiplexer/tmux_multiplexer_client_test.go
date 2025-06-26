@@ -6,6 +6,7 @@ import (
 	"testing"
 	"thop/internal/multiplexer"
 	"thop/internal/types/pane"
+	"thop/internal/types/template"
 	"thop/internal/types/window"
 
 	"github.com/stretchr/testify/assert"
@@ -30,17 +31,6 @@ func (m *MockCommandExecutor) ExecuteInteractive(cmd *exec.Cmd) (int, error) {
 }
 
 func Test_Client_AttachSession(t *testing.T) {
-	t.Run("returns error if session name is empty", func(t *testing.T) {
-		// given
-		client := &multiplexer.TmuxClientImpl{}
-
-		// when
-		err := client.AttachSession("")
-
-		// then
-		assert.True(t, multiplexer.ErrInvalidTemplateArgs.Equal(err))
-	})
-
 	t.Run("attaches to session", func(t *testing.T) {
 		// given
 		mockExecutor := new(MockCommandExecutor)
@@ -65,19 +55,6 @@ func Test_Client_AttachSession(t *testing.T) {
 }
 
 func Test_Client_SwitchSession(t *testing.T) {
-	t.Run("returns error if session name is empty", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		// when
-		err := client.SwitchSession("")
-
-		// then
-		assert.True(t, multiplexer.ErrInvalidTemplateArgs.Equal(err))
-	})
-
 	t.Run("switches session", func(t *testing.T) {
 		// given
 		mockExecutor := new(MockCommandExecutor)
@@ -102,19 +79,6 @@ func Test_Client_SwitchSession(t *testing.T) {
 }
 
 func Test_Client_HasSession(t *testing.T) {
-	t.Run("returns error if session name is empty", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		// when
-		_, err := client.HasSession("")
-
-		// then
-		assert.True(t, multiplexer.ErrInvalidTemplateArgs.Equal(err))
-	})
-
 	t.Run("returns false on exit code 1 gracefully", func(t *testing.T) {
 		// given
 		mockExecutor := new(MockCommandExecutor)
@@ -159,27 +123,6 @@ func Test_Client_HasSession(t *testing.T) {
 }
 
 func Test_Client_NewSession(t *testing.T) {
-	t.Run("returns error when missing required fields", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		win := window.Window{Name: "win"}
-
-		// expect
-		err := client.NewSession("", "root", win)
-		assert.NotNil(t, err, "expected error for empty session name")
-
-		// and
-		err = client.NewSession("sess", "", win)
-		assert.NotNil(t, err, "expected error for empty session root")
-
-		// and
-		err = client.NewSession("sess", "root", window.Window{})
-		assert.NotNil(t, err, "expected error for empty window name")
-	})
-
 	t.Run("returns error if session already exists", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
@@ -195,6 +138,7 @@ func Test_Client_NewSession(t *testing.T) {
 				"/home/test",
 				"-n",
 				"main",
+				"-P", "-F", "#{window_id} #{pane_id}",
 				"cd /project && exec $SHELL",
 			},
 		}
@@ -204,8 +148,17 @@ func Test_Client_NewSession(t *testing.T) {
 		}
 
 		// when
-		win := window.Window{Name: "main", Root: "/project"}
-		err := client.NewSession("mysession", "/home/test", win)
+		tmpl := template.Template{
+			Root: "/home/test",
+			Windows: []window.Window{
+				{
+					Name:  "main",
+					Root:  "/project",
+					Panes: []pane.Pane{{}},
+				},
+			},
+		}
+		_, _, err := client.NewSession("mysession", tmpl)
 
 		// then
 		assert.NotNil(t, err)
@@ -215,7 +168,7 @@ func Test_Client_NewSession(t *testing.T) {
 	t.Run("creates new session", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
 		expectedCmd := [][]string{
 			{
 				"tmux",
@@ -227,6 +180,7 @@ func Test_Client_NewSession(t *testing.T) {
 				"/home/test",
 				"-n",
 				"main",
+				"-P", "-F", "#{window_id} #{pane_id}",
 				"cd /project && exec $SHELL",
 			},
 		}
@@ -236,18 +190,29 @@ func Test_Client_NewSession(t *testing.T) {
 		}
 
 		// when
-		win := window.Window{Name: "main", Root: "/project"}
-		err := client.NewSession("mysession", "/home/test", win)
+		tmpl := template.Template{
+			Root: "/home/test",
+			Windows: []window.Window{
+				{
+					Name:  "main",
+					Root:  "/project",
+					Panes: []pane.Pane{{}},
+				},
+			},
+		}
+		wID, pID, err := client.NewSession("mysession", tmpl)
 
 		// then
 		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
 
 	t.Run("defaults main window root to session root if empty", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
 		expectedCmd := [][]string{
 			{
 				"tmux",
@@ -259,6 +224,7 @@ func Test_Client_NewSession(t *testing.T) {
 				"/home/test",
 				"-n",
 				"main",
+				"-P", "-F", "#{window_id} #{pane_id}",
 			},
 		}
 
@@ -267,31 +233,73 @@ func Test_Client_NewSession(t *testing.T) {
 		}
 
 		// when
-		win := window.Window{Name: "main", Root: ""}
-		err := client.NewSession("mysession", "/home/test", win)
+		tmpl := template.Template{
+			Root: "/home/test",
+			Windows: []window.Window{
+				{
+					Name:  "main",
+					Root:  "",
+					Panes: []pane.Pane{{}},
+				},
+			},
+		}
+		_, _, err := client.NewSession("mysession", tmpl)
 
 		// then
 		assert.Nil(t, err)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
+
+	t.Run("creates new session with pane root", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"new-session",
+				"-d",
+				"-s",
+				"mysession",
+				"-c",
+				"/home/test",
+				"-n",
+				"main",
+				"-P", "-F", "#{window_id} #{pane_id}",
+				"cd /project/pane && exec $SHELL",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		tmpl := template.Template{
+			Root: "/home/test",
+			Windows: []window.Window{
+				{
+					Name: "main",
+					Root: "/project",
+					Panes: []pane.Pane{
+						{
+							Root: "/project/pane",
+						},
+					},
+				},
+			},
+		}
+		wID, pID, err := client.NewSession("mysession", tmpl)
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
 }
 
 func Test_TmuxClient_SendKeys(t *testing.T) {
-	t.Run("returns error when missing required fields", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		// expect
-		err := client.SendKeys("", "ls")
-		assert.NotNil(t, err, "expected error for empty pane id")
-
-		// and
-		err = client.SendKeys("%id", "")
-		assert.NotNil(t, err, "expected error for empty keys")
-	})
-
 	t.Run("sends keys to pane", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
@@ -321,29 +329,10 @@ func Test_TmuxClient_SendKeys(t *testing.T) {
 }
 
 func Test_Client_NewWindow(t *testing.T) {
-	t.Run("returns error when missing required fields", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		// expect
-		err := client.NewWindow("", "/project", window.Window{Name: "window", Root: "/root"})
-		assert.NotNil(t, err, "expected error for empty session name")
-
-		// and
-		err = client.NewWindow("sess", "/project", window.Window{Name: "", Root: "/root"})
-		assert.NotNil(t, err, "expected error for empty window name")
-
-		// and
-		err = client.NewWindow("sess", "", window.Window{Name: "window", Root: "/root"})
-		assert.NotNil(t, err, "expected error for empty session root")
-	})
-
 	t.Run("includes default seession root if window root is empty", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
 		expectedCmd := [][]string{
 			{
 				"tmux",
@@ -355,6 +344,7 @@ func Test_Client_NewWindow(t *testing.T) {
 				"main",
 				"-c",
 				"/home/test",
+				"-P", "-F", "#{window_id} #{pane_id}",
 			},
 		}
 
@@ -363,18 +353,20 @@ func Test_Client_NewWindow(t *testing.T) {
 		}
 
 		// when
-		win := window.Window{Name: "main", Root: ""}
-		err := client.NewWindow("mysession", "/home/test", win)
+		win := window.Window{Name: "main", Root: "", Panes: []pane.Pane{{}}}
+		wID, pID, err := client.NewWindow("mysession", "/home/test", win)
 
 		// then
 		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
 
 	t.Run("creates new window", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
 		expectedCmd := [][]string{
 			{
 				"tmux",
@@ -386,6 +378,7 @@ func Test_Client_NewWindow(t *testing.T) {
 				"main",
 				"-c",
 				"/project",
+				"-P", "-F", "#{window_id} #{pane_id}",
 			},
 		}
 
@@ -394,11 +387,56 @@ func Test_Client_NewWindow(t *testing.T) {
 		}
 
 		// when
-		win := window.Window{Name: "main", Root: "/project"}
-		err := client.NewWindow("mysession", "/home/test", win)
+		win := window.Window{Name: "main", Root: "/project", Panes: []pane.Pane{{}}}
+		wID, pID, err := client.NewWindow("mysession", "/home/test", win)
 
 		// then
 		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("creates new window with pane root", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"new-window",
+				"-d",
+				"-t",
+				"mysession",
+				"-n",
+				"main",
+				"-c",
+				"/project",
+				"-P", "-F", "#{window_id} #{pane_id}",
+				"cd /project/pane && exec $SHELL",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		win := window.Window{
+			Name: "main",
+			Root: "/project",
+			Panes: []pane.Pane{
+				{
+					Root: "/project/pane",
+				},
+			},
+		}
+		wID, pID, err := client.NewWindow("mysession", "/home/test", win)
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
 }
@@ -483,19 +521,6 @@ func Test_IsTmuxServerRunning(t *testing.T) {
 }
 
 func Test_KillSession(t *testing.T) {
-	t.Run("returns error if session name is empty", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		// when
-		err := client.KillSession("")
-
-		// then
-		assert.True(t, multiplexer.ErrInvalidTemplateArgs.Equal(err))
-	})
-
 	t.Run("kills session", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
@@ -518,38 +543,19 @@ func Test_KillSession(t *testing.T) {
 }
 
 func Test_NewPane(t *testing.T) {
-	t.Run("returns error when missing required fields", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		// expect
-		err := client.NewPane("", "win", pane.Pane{}, "/home/test")
-		assert.NotNil(t, err, "expected error for empty session name")
-
-		// and
-		err = client.NewPane("sess", "", pane.Pane{}, "/home/test")
-		assert.NotNil(t, err, "expected error for empty window name")
-
-		// and
-		err = client.NewPane("sess", "win", pane.Pane{}, "")
-		assert.NotNil(t, err, "expected error for empty fallback root")
-	})
-
-	t.Run("creates new pane", func(t *testing.T) {
+	t.Run("creates new pane with pane root", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		executor.On("Execute", mock.Anything).Return("%1\n", 0, nil)
 		expectedCmd := [][]string{
 			{
 				"tmux",
 				"split-window",
-				"-d",
 				"-t",
-				"mysession:win",
+				"@1",
 				"-c",
-				"/project",
+				"/pane/root",
+				"-P", "-F", "#{pane_id}",
 			},
 		}
 
@@ -558,26 +564,27 @@ func Test_NewPane(t *testing.T) {
 		}
 
 		// when
-		err := client.NewPane("mysession", "win", pane.Pane{Root: "/project"}, "/home/test")
+		pID, err := client.NewPane("@1", "/template/root", "/window/root", pane.Pane{Root: "/pane/root"})
 
 		// then
 		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.PaneID("%1"), pID)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
 
-	t.Run("creates new pane in fallback root if pane root is empty", func(t *testing.T) {
+	t.Run("creates new pane with window root if pane root is empty", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("", 0, nil)
+		executor.On("Execute", mock.Anything).Return("%1\n", 0, nil)
 		expectedCmd := [][]string{
 			{
 				"tmux",
 				"split-window",
-				"-d",
 				"-t",
-				"mysession:win",
+				"@1",
 				"-c",
-				"/home/test",
+				"/window/root",
+				"-P", "-F", "#{pane_id}",
 			},
 		}
 
@@ -586,10 +593,40 @@ func Test_NewPane(t *testing.T) {
 		}
 
 		// when
-		err := client.NewPane("mysession", "win", pane.Pane{}, "/home/test")
+		pID, err := client.NewPane("@1", "/template/root", "/window/root", pane.Pane{})
 
 		// then
 		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.PaneID("%1"), pID)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("creates new pane with template root if pane and window root are empty", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("%1\n", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"split-window",
+				"-t",
+				"@1",
+				"-c",
+				"/template/root",
+				"-P", "-F", "#{pane_id}",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		pID, err := client.NewPane("@1", "/template/root", "", pane.Pane{})
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.PaneID("%1"), pID)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
 
@@ -603,7 +640,7 @@ func Test_NewPane(t *testing.T) {
 		}
 
 		// when
-		err := client.NewPane("mysession", "win", pane.Pane{}, "/home/test")
+		_, err := client.NewPane("@1", "/template/root", "", pane.Pane{})
 
 		// then
 		assert.True(t, multiplexer.ErrFailedToCreatePane.Equal(err))
@@ -611,84 +648,13 @@ func Test_NewPane(t *testing.T) {
 	})
 }
 
-func Test_ListPanes(t *testing.T) {
-	t.Run("returns error when missing required fields", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		// expect
-		_, err := client.ListPanes("", "win")
-		assert.NotNil(t, err, "expected error for empty session name")
-
-		// and
-		_, err = client.ListPanes("mysession", "")
-		assert.NotNil(t, err, "expected error for empty window name")
-	})
-
-	t.Run("returns list of panes", func(t *testing.T) {
-		// given
-		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("foo\nbar\nbaz\n", 0, nil).Once()
-
-		expectedCmd := [][]string{
-			{"tmux", "list-panes", "-t", "mysession:win", "-F", "#{pane_id}"},
-		}
-
-		client := multiplexer.TmuxClientImpl{
-			E: executor,
-		}
-
-		// when
-		panes, err := client.ListPanes("mysession", "win")
-
-		// then
-		assert.Nil(t, err)
-		assert.Equal(t, []multiplexer.PaneID{"foo", "bar", "baz"}, panes)
-		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
-	})
-
-	t.Run("returns mapped error if command fails", func(t *testing.T) {
-		// given
-		executor := new(MockCommandExecutor)
-		executor.On("Execute", mock.Anything).Return("", 1, errors.New("exit code 1")).Once()
-
-		client := multiplexer.TmuxClientImpl{
-			E: executor,
-		}
-
-		// when
-		_, err := client.ListPanes("mysession", "win")
-
-		// then
-		assert.True(t, multiplexer.ErrFailedToListPanes.Equal(err))
-		executor.AssertExpectations(t)
-	})
-}
-
 func Test_SetLayout(t *testing.T) {
-	t.Run("returns error if missing required fields", func(t *testing.T) {
-		// given
-		client := multiplexer.TmuxClientImpl{
-			E: nil,
-		}
-
-		// expect
-		err := client.SetLayout("", window.Window{})
-		assert.NotNil(t, err, "expected error for empty session name")
-
-		// and
-		err = client.SetLayout("mysession", window.Window{})
-		assert.NotNil(t, err, "expected error for empty window")
-	})
-
 	t.Run("sets layout", func(t *testing.T) {
 		// given
 		executor := new(MockCommandExecutor)
 		executor.On("Execute", mock.Anything).Return("", 0, nil)
 		expectedCmd := [][]string{
-			{"tmux", "select-layout", "-t", "mysession:main", "tiled"},
+			{"tmux", "select-layout", "-t", "@1", "tiled"},
 		}
 
 		client := multiplexer.TmuxClientImpl{
@@ -696,7 +662,7 @@ func Test_SetLayout(t *testing.T) {
 		}
 
 		// when
-		err := client.SetLayout("mysession", window.Window{Name: "main", Layout: window.LayoutTiled})
+		err := client.SetLayout("@1", window.LayoutTiled)
 
 		// then
 		assert.Nil(t, err)
@@ -713,7 +679,7 @@ func Test_SetLayout(t *testing.T) {
 		}
 
 		// when
-		err := client.SetLayout("mysession", window.Window{Name: "main", Layout: window.LayoutTiled})
+		err := client.SetLayout("@1", window.LayoutTiled)
 
 		// then
 		assert.True(t, multiplexer.ErrFailedToSetLayout.Equal(err))
