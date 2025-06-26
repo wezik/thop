@@ -22,13 +22,12 @@ func Test_WithDefaults(t *testing.T) {
 
 		// then
 		assert.Equal(t, template.Root("/foo/bar"), temp.Root)
-		assert.Equal(t, window.Name("window0"), temp.Windows[0].Name)
 		assert.Equal(t, pane.Pane{}, temp.Windows[0].Panes[0])
 	})
 
 	t.Run("fills windows with panes", func(t *testing.T) {
 		// given
-		template := template.Template{
+		temp := template.Template{
 			Root: "/foo/bar",
 			Windows: []window.Window{
 				{
@@ -46,28 +45,83 @@ func Test_WithDefaults(t *testing.T) {
 		}
 
 		// when
-		template = template.WithDefaults()
+		temp = temp.WithDefaults()
 
 		// then
-		assert.Equal(t, pane.Pane{Commands: []command.Command{"echo foo"}}, template.Windows[0].Panes[0])
-		assert.Equal(t, pane.Pane{}, template.Windows[1].Panes[0])
+		assert.Equal(t, pane.Pane{Commands: []command.Command{"echo foo"}}, temp.Windows[0].Panes[0])
+		assert.Equal(t, pane.Pane{}, temp.Windows[1].Panes[0])
 	})
+}
 
-	t.Run("fills window names", func(t *testing.T) {
+func Test_IsValid(t *testing.T) {
+	t.Run("returns true for valid template", func(t *testing.T) {
 		// given
-		template := template.Template{
+		temp := template.Template{
 			Root: "/foo/bar",
 			Windows: []window.Window{
 				{
-					Name: "",
+					Layout: window.LayoutTiled,
+					Panes:  []pane.Pane{{}},
 				},
 			},
 		}
 
 		// when
-		newTemplate := template.WithDefaults()
+		isValid := temp.IsValid()
 
 		// then
-		assert.Equal(t, window.Name("window0"), newTemplate.Windows[0].Name)
+		assert.True(t, isValid)
+	})
+
+	t.Run("returns false if root is empty", func(t *testing.T) {
+		// given
+		temp := template.Template{
+			Root: "",
+			Windows: []window.Window{
+				{
+					Layout: window.LayoutTiled,
+					Panes:  []pane.Pane{{}},
+				},
+			},
+		}
+
+		// when
+		isValid := temp.IsValid()
+
+		// then
+		assert.False(t, isValid)
+	})
+
+	t.Run("returns false if no windows", func(t *testing.T) {
+		// given
+		temp := template.Template{
+			Root:    "/foo/bar",
+			Windows: []window.Window{},
+		}
+
+		// when
+		isValid := temp.IsValid()
+
+		// then
+		assert.False(t, isValid)
+	})
+
+	t.Run("returns false if any window is invalid", func(t *testing.T) {
+		// given
+		temp := template.Template{
+			Root: "/foo/bar",
+			Windows: []window.Window{
+				{
+					Layout: "invalid-layout", // Invalid layout
+					Panes:  []pane.Pane{{}},
+				},
+			},
+		}
+
+		// when
+		isValid := temp.IsValid()
+
+		// then
+		assert.False(t, isValid)
 	})
 }

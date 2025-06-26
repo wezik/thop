@@ -63,6 +63,10 @@ func Test_List(t *testing.T) {
 			{UUID: "baz", Name: "foobar", Template: template.Template{Root: "/home/test"}},
 		}
 
+		for i := range expectedProjects {
+			expectedProjects[i] = expectedProjects[i].WithDefaults()
+		}
+
 		st := &storage.YamlStorage{Config: cfg, FileSystem: fs}
 
 		// when
@@ -157,6 +161,7 @@ func Test_Find(t *testing.T) {
 
 		// when
 		project, err := st.Find(expectedProject.Name)
+		expectedProject = expectedProject.WithDefaults()
 
 		// then
 		assert.Nil(t, err)
