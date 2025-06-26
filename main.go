@@ -1,12 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 	"thop/cmd"
 	"thop/internal/config"
 	"thop/internal/executor"
 	"thop/internal/fsystem"
+	"thop/internal/logger"
 	"thop/internal/multiplexer"
 	"thop/internal/selector"
 	"thop/internal/service"
@@ -14,40 +15,39 @@ import (
 )
 
 func main() {
-	editor := os.Getenv("EDITOR")
-	userConfigDir, err := os.UserConfigDir()
+	var logFile string
+
+	rootCmd := cmd.GetRootCmd()
+	rootCmd.PersistentFlags().StringVar(&logFile, "log-file", "", "Path to the log file")
+
+	// a bit of manual DI
+	c, err := config.New()
 	if err != nil {
-		panic(err)
+		fmt.Println("Failed to load config:", err)
+		os.Exit(1)
 	}
 
-	configPath := filepath.Join(userConfigDir, "thop")
-	tmuxSession := os.Getenv("TMUX")
-
-	config := config.Config{
-		ConfigDir: configPath,
-		Editor:    editor,
+	if logFile == "" {
+		logFile = c.GetConfigDir() + "/thop.log"
 	}
 
-	executor := executor.ShellExecutor{}
-	fsystem := fsystem.OsFileSystem{}
+	if err := logger.Init(logFile); err != nil {
+		fmt.Println("Failed to initialize logger:", err)
+		os.Exit(1)
+	}
 
-	svc := service.AppService{
-		Selector: &selector.FzfProjectSelector{E: &executor},
-
+	s := &storage.YamlStorage{Config: c, FileSystem: &fsystem.OsFileSystem{}}
+	e := &executor.ShellExecutor{}
+	cmd.AppService = &service.AppService{
+		Selector: &selector.FzfProjectSelector{E: e},
 		Multiplexer: &multiplexer.TmuxMultiplexer{
-			ActiveTmuxSession: tmuxSession,
-			Client:            &multiplexer.TmuxClientImpl{E: &executor},
+			ActiveTmuxSession: os.Getenv("TMUX"),
+			Client:            &multiplexer.TmuxClientImpl{E: e},
 		},
-
-		Storage: &storage.YamlStorage{
-			Config:     &config,
-			FileSystem: &fsystem,
-		},
-
-		Config: &config,
-		E:      &executor,
+		Storage: s,
+		Config:  c,
+		E:       e,
 	}
 
-	cmd.AppService = &svc
 	cmd.Execute()
 }

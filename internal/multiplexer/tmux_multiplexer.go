@@ -3,6 +3,7 @@ package multiplexer
 import (
 	"fmt"
 	"slices"
+	"thop/internal/logger"
 	"thop/internal/types/pane"
 	"thop/internal/types/project"
 	"thop/internal/types/window"
@@ -37,12 +38,12 @@ func (m *TmuxMultiplexer) AttachProject(p project.Project) error {
 	}
 
 	if m.ActiveTmuxSession != "" {
-		fmt.Println("Switching to", sn, "session")
+		logger.Message(fmt.Sprintf("Switching to %s session", sn))
 		if err := m.Client.SwitchSession(sn); err != nil {
 			return err
 		}
 	} else {
-		fmt.Println("Attaching to", sn, "session")
+		logger.Message(fmt.Sprintf("Attaching to %s session", sn))
 		if err := m.Client.AttachSession(sn); err != nil {
 			return err
 		}
@@ -72,12 +73,15 @@ func (m *TmuxMultiplexer) ListActiveSessions() ([]project.Project, error) {
 		tmuxProjects = append(tmuxProjects, p)
 	}
 
+	logger.Info(fmt.Sprintf("Loaded %d active tmux sessions", len(tmuxProjects)))
 	return tmuxProjects, nil
 }
 
 func (m *TmuxMultiplexer) KillSession(p project.Project) error {
 	sn := resolveSessionName(p)
-	return m.Client.KillSession(sn)
+	err := m.Client.KillSession(sn)
+	logger.Message(fmt.Sprintf("Killed session %s", sn))
+	return err
 }
 
 func (m *TmuxMultiplexer) assembleSession(sn SessionName, p project.Project) (err error) {
@@ -152,6 +156,6 @@ func (m *TmuxMultiplexer) assembleSession(sn SessionName, p project.Project) (er
 		}
 	}
 
-	fmt.Println("Session", sn, "created")
+	logger.Message(fmt.Sprintf("Session %s assembled", sn))
 	return nil
 }

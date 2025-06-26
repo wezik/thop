@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"thop/internal/config"
 	"thop/internal/fsystem"
+	"thop/internal/logger"
 	"thop/internal/problem"
 	"thop/internal/types/project"
 
@@ -73,7 +74,7 @@ func (s *YamlStorage) List() ([]project.Project, error) {
 
 		var p project.Project
 		if err = yaml.Unmarshal(bytes, &p); err != nil {
-			fmt.Println(err)
+			logger.Warn("Failed to parse project template", err)
 			continue
 		}
 
@@ -85,6 +86,7 @@ func (s *YamlStorage) List() ([]project.Project, error) {
 		}
 	}
 
+	logger.Info(fmt.Sprintf("Loaded %d projects", len(projects)))
 	return projects, nil
 }
 
@@ -100,6 +102,7 @@ func (s *YamlStorage) Find(name project.Name) (project.Project, error) {
 			if !p.IsValid() {
 				return project.Project{}, ErrProjectNotFound.WithMsg("project", name, "is invalid")
 			}
+			logger.Info(fmt.Sprintf("Found project %s", p.Name))
 			return p, nil
 		}
 	}
@@ -139,6 +142,7 @@ func (s *YamlStorage) Delete(uuid project.UUID) error {
 		return ErrFailedToDeleteProject.WithMsg(err.Error())
 	}
 
+	logger.Info(fmt.Sprintf("Deleted project %s under %s", uuid, templateDir))
 	return nil
 }
 

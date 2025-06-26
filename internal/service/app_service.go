@@ -4,6 +4,7 @@ import (
 	"os/exec"
 	"thop/internal/config"
 	"thop/internal/executor"
+
 	"thop/internal/multiplexer"
 	"thop/internal/problem"
 	"thop/internal/selector"
@@ -26,7 +27,8 @@ type AppService struct {
 	Multiplexer multiplexer.Multiplexer
 	Storage     storage.Storage
 	Config      *config.Config
-	E           executor.CommandExecutor
+
+	E executor.CommandExecutor
 }
 
 const (
