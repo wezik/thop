@@ -119,6 +119,8 @@ func (c *TmuxClientImpl) NewSession(sn SessionName, t template.Template) (Window
 }
 
 func (c *TmuxClientImpl) NewWindow(sn SessionName, tr template.Root, w window.Window) (WindowID, PaneID, error) {
+	mp := w.Panes[0]
+
 	cmd := exec.Command("tmux", "new-window", "-d")
 	cmd.Args = append(cmd.Args, "-t", string(sn))
 
@@ -134,6 +136,10 @@ func (c *TmuxClientImpl) NewWindow(sn SessionName, tr template.Root, w window.Wi
 	}
 
 	cmd.Args = append(cmd.Args, "-P", "-F", "#{window_id} #{pane_id}")
+
+	if mp.Root != "" {
+		cmd.Args = append(cmd.Args, fmt.Sprintf("cd %s && exec $SHELL", mp.Root))
+	}
 
 	o, _, err := c.E.Execute(cmd)
 	if err != nil {
