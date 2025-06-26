@@ -27,6 +27,10 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+func GetRootCmd() *cobra.Command {
+	return rootCmd
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		switch err := err.(type) {

@@ -1,53 +1,61 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 	"thop/cmd"
 	"thop/internal/config"
 	"thop/internal/executor"
 	"thop/internal/fsystem"
+	"thop/internal/logger"
+	"thop/internal/messenger"
 	"thop/internal/multiplexer"
 	"thop/internal/selector"
 	"thop/internal/service"
 	"thop/internal/storage"
+
+	"github.com/spf13/cobra"
 )
 
 func main() {
-	editor := os.Getenv("EDITOR")
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		panic(err)
-	}
+	var logFile string
 
-	configPath := filepath.Join(userConfigDir, "thop")
-	tmuxSession := os.Getenv("TMUX")
+	rootCmd := cmd.GetRootCmd()
+	rootCmd.PersistentFlags().StringVar(&logFile, "log-file", "", "Path to the log file")
 
-	config := config.Config{
-		ConfigDir: configPath,
-		Editor:    editor,
-	}
+	cobra.OnInitialize(func() {
+		// a bit of manual DI
+		c, err := config.New()
+		if err != nil {
+			fmt.Println("Failed to load config:", err)
+			os.Exit(1)
+		}
 
-	executor := executor.ShellExecutor{}
-	fsystem := fsystem.OsFileSystem{}
+		if logFile == "" {
+			logFile = c.GetConfigDir() + "/thop.log"
+		}
 
-	svc := service.AppService{
-		Selector: &selector.FzfProjectSelector{E: &executor},
+		logger, err := logger.New(logFile)
+		if err != nil {
+			fmt.Println("Failed to initialize logger:", err)
+			os.Exit(1)
+		}
 
-		Multiplexer: &multiplexer.TmuxMultiplexer{
-			ActiveTmuxSession: tmuxSession,
-			Client:            &multiplexer.TmuxClientImpl{E: &executor},
-		},
+		msg := &messenger.Messenger{Logger: logger}
+		s := &storage.YamlStorage{Config: c, FileSystem: &fsystem.OsFileSystem{}}
+		e := &executor.ShellExecutor{Logger: logger}
+		cmd.AppService = &service.AppService{
+			Selector: &selector.FzfProjectSelector{E: e},
+			Multiplexer: &multiplexer.TmuxMultiplexer{
+				ActiveTmuxSession: os.Getenv("TMUX"),
+				Client:            &multiplexer.TmuxClientImpl{E: e},
+				Messenger:         msg,
+			},
+			Storage: s,
+			Config:  c,
+			E:       e,
+		}
+	})
 
-		Storage: &storage.YamlStorage{
-			Config:     &config,
-			FileSystem: &fsystem,
-		},
-
-		Config: &config,
-		E:      &executor,
-	}
-
-	cmd.AppService = &svc
 	cmd.Execute()
 }

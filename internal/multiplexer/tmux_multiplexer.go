@@ -3,6 +3,7 @@ package multiplexer
 import (
 	"fmt"
 	"slices"
+	"thop/internal/messenger"
 	"thop/internal/types/pane"
 	"thop/internal/types/project"
 	"thop/internal/types/window"
@@ -17,6 +18,7 @@ type Multiplexer interface {
 type TmuxMultiplexer struct {
 	ActiveTmuxSession string
 	Client            TmuxClient
+	Messenger         *messenger.Messenger
 }
 
 func (m *TmuxMultiplexer) AttachProject(p project.Project) error {
@@ -37,12 +39,12 @@ func (m *TmuxMultiplexer) AttachProject(p project.Project) error {
 	}
 
 	if m.ActiveTmuxSession != "" {
-		fmt.Println("Switching to", sn, "session")
+		m.Messenger.Info(fmt.Sprintf("Switching to %s session", sn))
 		if err := m.Client.SwitchSession(sn); err != nil {
 			return err
 		}
 	} else {
-		fmt.Println("Attaching to", sn, "session")
+		m.Messenger.Info(fmt.Sprintf("Attaching to %s session", sn))
 		if err := m.Client.AttachSession(sn); err != nil {
 			return err
 		}
@@ -152,6 +154,6 @@ func (m *TmuxMultiplexer) assembleSession(sn SessionName, p project.Project) (er
 		}
 	}
 
-	fmt.Println("Session", sn, "created")
+	m.Messenger.Info(fmt.Sprintf("Session %s created", sn))
 	return nil
 }

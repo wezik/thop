@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"log/slog"
 	"os"
 	"os/exec"
 )
@@ -10,10 +11,12 @@ type CommandExecutor interface {
 	ExecuteInteractive(cmd *exec.Cmd) (int, error)
 }
 
-type ShellExecutor struct{}
+type ShellExecutor struct {
+	Logger *slog.Logger
+}
 
 func (s *ShellExecutor) Execute(cmd *exec.Cmd) (string, int, error) {
-	println(cmd.String())
+	s.Logger.Info(cmd.String())
 	res, err := cmd.Output()
 	return string(res), cmd.ProcessState.ExitCode(), err
 }
