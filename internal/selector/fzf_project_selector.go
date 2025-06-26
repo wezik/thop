@@ -2,10 +2,12 @@ package selector
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
 	"slices"
 	"strings"
 	"thop/internal/executor"
+	"thop/internal/logger"
 	"thop/internal/problem"
 	"thop/internal/types/project"
 )
@@ -68,6 +70,8 @@ func entryFromProject(p *project.Project) (projectEntry, error) {
 }
 
 func (s *FzfProjectSelector) SelectFrom(items []project.Project, prompt string) (*project.Project, error) {
+	logger.Info(fmt.Sprintf("Selecting from %d projects", len(items)))
+
 	var itemsInternal []projectEntry
 	for _, item := range items {
 		entry, err := entryFromProject(&item)
@@ -116,5 +120,6 @@ func (s *FzfProjectSelector) SelectFrom(items []project.Project, prompt string) 
 		return nil, ErrUnexpectedState.WithMsg("selected project not found")
 	}
 
+	logger.Info(fmt.Sprintf("Selected project %s", selected.Name))
 	return selected, nil
 }

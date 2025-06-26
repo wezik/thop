@@ -6,9 +6,9 @@ import (
 )
 
 type Config struct {
-	configDir  string
-	editor     string
-	insideTmux bool
+	ConfigDir  string
+	Editor     string
+	InsideTmux bool
 }
 
 func New() (*Config, error) {
@@ -22,12 +22,12 @@ func New() (*Config, error) {
 	tmuxSession := os.Getenv("TMUX")
 
 	return &Config{
-		configDir:  configPath,
-		editor:     editor,
-		insideTmux: tmuxSession != "",
+		ConfigDir:  configPath,
+		Editor:     editor,
+		InsideTmux: tmuxSession != "",
 	}, nil
 }
 
-func (c *Config) GetConfigDir() string { return c.configDir }
-func (c *Config) GetEditor() string    { return c.editor }
-func (c *Config) IsInsideTmux() bool   { return c.insideTmux }
+func (c *Config) GetConfigDir() string { return c.ConfigDir }
+func (c *Config) GetEditor() string    { return c.Editor }
+func (c *Config) IsInsideTmux() bool   { return c.InsideTmux }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"thop/internal/logger"
 	"thop/internal/problem"
 	"thop/internal/selector"
 	"thop/internal/service"
@@ -11,7 +12,6 @@ import (
 )
 
 var AppService service.Service
-
 var rootCmd = &cobra.Command{
 	Use:           "thop",
 	Short:         "Thop is a quick & lightweight tmux session/project manager",
@@ -32,23 +32,20 @@ func GetRootCmd() *cobra.Command {
 }
 
 func Execute() {
+	logger.Info(fmt.Sprintf("Executing args: %s", os.Args[1:]))
+
 	if err := rootCmd.Execute(); err != nil {
 		switch err := err.(type) {
 
 		case problem.Problem:
 			// special case for selector cancellation
 			if selector.ErrSelectorCancelled.Equal(err) {
-				fmt.Println("Selection cancelled")
+				logger.Message("Selection cancelled")
 				os.Exit(0)
 			}
-
-			fmt.Println(err.Key+":", err.Message)
-			os.Exit(1)
-
-		default:
-			fmt.Println("Uncaught error:", err.Error())
-			os.Exit(1)
-
 		}
+
+		logger.Error(err)
+		os.Exit(1)
 	}
 }
