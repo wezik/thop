@@ -85,7 +85,7 @@ template:
     panes:                                  # List of panes to be created
     - run:
       - nvim                                # List of commands to be executed in this pane
-    - root: /optional/root/dir/pane         # Root directory for this pane (doesn't work for 1st pane)
+    - root: /optional/root/dir/pane         # Root directory for this pane
       active: true                          # Set as active pane
   - name: logs
     active: true                            # Set as active window
