@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"thop/internal/config"
 	"thop/internal/fsystem"
 	"thop/internal/logger"
@@ -15,10 +16,11 @@ import (
 
 type Storage interface {
 	List() ([]project.Project, error)
+	ListWithInvalid() ([]project.Project, error)
 	Find(project.Name) (project.Project, error)
 	Save(*project.Project) error
 	Delete(uuid project.UUID) error
-	PrepareTemplateFile(project.Project) (string, error)
+	PrepareTemplateFile(project.UUID) (string, error)
 }
 
 type YamlStorage struct {
@@ -44,7 +46,31 @@ const (
 	templatesDirName = "templates"
 )
 
+// list returns all valid templates, if you want to list invalid templates use ListWithInvalid
 func (s *YamlStorage) List() ([]project.Project, error) {
+	projects, err := s.ListWithInvalid()
+	if err != nil {
+		return nil, err
+	}
+
+	var validProjects []project.Project
+	for _, p := range projects {
+		if p.IsValid() {
+			validProjects = append(validProjects, p)
+		}
+	}
+
+	diff := len(projects) - len(validProjects)
+	if diff > 0 {
+		logger.Info(fmt.Sprintf("Stripped %d invalid projects", diff))
+	}
+
+	return validProjects, nil
+}
+
+var topLevelNameRegex = regexp.MustCompile(`(?m)^name:\s*(.+?)(\s+#.*)?$`)
+
+func (s *YamlStorage) ListWithInvalid() ([]project.Project, error) {
 	cfgDir := s.Config.GetConfigDir()
 
 	templatesDir := filepath.Join(cfgDir, templatesDirName)
@@ -78,17 +104,25 @@ func (s *YamlStorage) List() ([]project.Project, error) {
 
 		var p project.Project
 		if err = yaml.Unmarshal(bytes, &p); err != nil {
-			log := fmt.Sprintf("Failed to unmarshal project template %s", templateFile)
-			logger.Warn(log, err)
-			continue
+			logger.Warn(fmt.Sprintf("Found invalid project template at '%s'", templateFile), err)
+
+			// fallback attempt to only get the name of the project with regex
+			match := topLevelNameRegex.FindStringSubmatch(string(bytes))
+			if len(match) > 1 {
+				p.Name = project.Name(match[1])
+				logger.Info(fmt.Sprintf("Recovered project name '%s' from '%s'", p.Name, templateFile))
+			} else {
+				p.Name = project.Name(dirName) // fallback to dir name
+				logger.Warn(fmt.Sprintf("Failed to recover project name from '%s'", templateFile))
+			}
+
+			p.Type = project.TypeInvalid
 		}
 
 		p.UUID = project.UUID(dirName)
 		p = p.WithDefaults()
 
-		if p.IsValid() {
-			projects = append(projects, p)
-		}
+		projects = append(projects, p)
 	}
 
 	logger.Info(fmt.Sprintf("Loaded %d projects", len(projects)))
@@ -151,7 +185,7 @@ func (s *YamlStorage) Delete(uuid project.UUID) error {
 	return nil
 }
 
-func (s *YamlStorage) PrepareTemplateFile(p project.Project) (string, error) {
+func (s *YamlStorage) PrepareTemplateFile(uuid project.UUID) (string, error) {
 	cfgDir := s.Config.GetConfigDir()
-	return filepath.Join(cfgDir, templatesDirName, string(p.UUID), templateFileName), nil
+	return filepath.Join(cfgDir, templatesDirName, string(uuid), templateFileName), nil
 }

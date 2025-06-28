@@ -50,6 +50,11 @@ func (m *MockStorage) List() ([]project.Project, error) {
 	return args.Get(0).([]project.Project), args.Error(1)
 }
 
+func (m *MockStorage) ListWithInvalid() ([]project.Project, error) {
+	args := m.Called()
+	return args.Get(0).([]project.Project), args.Error(1)
+}
+
 func (m *MockStorage) Find(name project.Name) (project.Project, error) {
 	args := m.Called(name)
 	return args.Get(0).(project.Project), args.Error(1)
@@ -65,8 +70,8 @@ func (m *MockStorage) Delete(uuid project.UUID) error {
 	return args.Error(0)
 }
 
-func (m *MockStorage) PrepareTemplateFile(p project.Project) (string, error) {
-	args := m.Called(p)
+func (m *MockStorage) PrepareTemplateFile(uuid project.UUID) (string, error) {
+	args := m.Called(uuid)
 	return args.String(0), args.Error(1)
 }
 

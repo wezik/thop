@@ -102,14 +102,13 @@ Destination is set but things can still change and break backwards compatibility
 ### TODO's:
 - Integration tests
 - Review the Makefile
-- Fix: Trying to edit a template with invalid yaml crash
 
 ### Ideas:
 - A general config file
 - Video showcase in README
 - Opt in clearing of executed shell commands
-
-- Make run paramter take in multi line string instead of array
+- Setup and destroy blocks
+- Make run parameter take in multi line string instead of array
 
 ### Post v1 ideas:
 - Migrations for template versions

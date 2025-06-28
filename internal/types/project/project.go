@@ -11,8 +11,9 @@ type Name string
 type ProjectType int
 
 const (
-	TypeTemplate ProjectType = iota // will default to TypeTemplate if not set explicitly
-	TypeTmuxSession
+	TypeTemplate    ProjectType = iota // will default to TypeTemplate if not set explicitly
+	TypeTmuxSession                    // signals tmux session
+	TypeInvalid                        // signals invalid project template
 )
 
 type Project struct {
@@ -30,9 +31,9 @@ func (p *Project) WithDefaults() Project {
 }
 
 func (p *Project) IsValid() bool {
-	// for now other types shouldn't be validated at all since they are not meant to be created by user
+	// for now other types shouldn't be treated as valid
 	if p.Type != TypeTemplate {
-		panic("only template projects validation is supported")
+		return false
 	}
 
 	if p.UUID == "" {

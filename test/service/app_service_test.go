@@ -419,8 +419,8 @@ func Test_EditProject(t *testing.T) {
 		slMock.On("SelectFrom", projects, mock.Anything).Return(&projects[0], nil).Once()
 
 		stMock := new(test.MockStorage)
-		stMock.On("List").Return(projects, nil).Once()
-		stMock.On("PrepareTemplateFile", projects[0]).Return(templateFile, nil).Once()
+		stMock.On("ListWithInvalid").Return(projects, nil).Once()
+		stMock.On("PrepareTemplateFile", projects[0].UUID).Return(templateFile, nil).Once()
 
 		executorMock := new(test.MockExecutor)
 		executorMock.On("ExecuteInteractive", mock.Anything).Return(0, nil).Once()
@@ -458,7 +458,7 @@ func Test_EditProject(t *testing.T) {
 
 		stMock := new(test.MockStorage)
 		stMock.On("Find", project.Name).Return(project, nil).Once()
-		stMock.On("PrepareTemplateFile", project).Return(templateFile, nil).Once()
+		stMock.On("PrepareTemplateFile", project.UUID).Return(templateFile, nil).Once()
 
 		editorMock := new(test.MockExecutor)
 		editorMock.On("ExecuteInteractive", mock.Anything).Return(0, nil).Once()
@@ -506,14 +506,11 @@ func Test_EditProject(t *testing.T) {
 		// given
 		expected := errors.New("expected error")
 
-		slMock := new(test.MockProjectSelector)
-		slMock.On("SelectFrom", mock.Anything, mock.Anything).Return("", nil).Once()
-
 		stMock := new(test.MockStorage)
-		stMock.On("List").Return([]project.Project{}, expected).Once()
+		stMock.On("ListWithInvalid").Return([]project.Project{}, expected).Once()
 
 		svc := &service.AppService{
-			Selector:    slMock,
+			Selector:    nil,
 			Multiplexer: nil,
 			Storage:     stMock,
 			E:           nil,
@@ -536,7 +533,7 @@ func Test_EditProject(t *testing.T) {
 		slMock.On("SelectFrom", mock.Anything, mock.Anything).Return(&project.Project{}, expected).Once()
 
 		stMock := new(test.MockStorage)
-		stMock.On("List").Return(listReturn, nil).Once()
+		stMock.On("ListWithInvalid").Return(listReturn, nil).Once()
 
 		svc := &service.AppService{
 			Selector:    slMock,

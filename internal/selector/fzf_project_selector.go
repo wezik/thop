@@ -47,7 +47,7 @@ func entryFromProject(p *project.Project) (projectEntry, error) {
 		return projectEntry{
 			Project:     p,
 			DisplayName: string(p.Name),
-			Prefix:      "(Active) ",
+			Prefix:      "(Active)",
 			Order:       0, // order active sessions first
 		}, nil
 
@@ -66,6 +66,14 @@ func entryFromProject(p *project.Project) (projectEntry, error) {
 			Project:     p,
 			DisplayName: displayName,
 			Order:       1,
+		}, nil
+
+	case project.TypeInvalid:
+		return projectEntry{
+			Project:     p,
+			DisplayName: string(p.Name),
+			Order:       -1,
+			Prefix:      "(Invalid)",
 		}, nil
 
 	default:
@@ -102,7 +110,12 @@ func (s *FzfProjectSelector) SelectFrom(items []project.Project, prompt string) 
 	var input bytes.Buffer
 
 	for _, item := range itemsInternal {
-		fullName := item.Prefix + item.DisplayName
+		var fullName string
+		if item.Prefix != "" {
+			fullName = fmt.Sprintf("%s %s", item.Prefix, item.DisplayName)
+		} else {
+			fullName = item.DisplayName
+		}
 		nameMap[fullName] = item.Project
 		input.WriteString(fullName + "\n")
 	}
