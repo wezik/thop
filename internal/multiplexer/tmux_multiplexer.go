@@ -33,8 +33,8 @@ func (m *TmuxMultiplexer) AttachProject(p project.Project) error {
 	}
 
 	if !exists {
-		if p.Type == project.TypeTmuxSession {
-			return ErrTriedToBuildFromActiveSession.WithMsg("cannot build from active session (it was probably killed while thop was running)")
+		if p.Type != project.TypeTemplate {
+			return ErrTriedToBuildFromActiveSession.WithMsg("tried to build from non-template type project")
 		}
 
 		if err := m.assembleSession(sn, p); err != nil {

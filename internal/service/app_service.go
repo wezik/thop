@@ -137,12 +137,30 @@ func (s *AppService) DeleteProject(name project.Name) error {
 }
 
 func (s *AppService) EditProject(name project.Name) error {
-	p, err := s.findOrSelect(name, "Select project to edit > ")
-	if err != nil {
-		return err
+	var p project.Project
+
+	if name != "" {
+		pro, err := s.Storage.Find(name)
+		if err != nil {
+			return err
+		}
+
+		p = pro
+	} else {
+		projects, err := s.Storage.ListWithInvalid()
+		if err != nil {
+			return err
+		}
+
+		selected, err := s.Selector.SelectFrom(projects, "Select project to edit > ")
+		if err != nil {
+			return err
+		}
+
+		p = *selected
 	}
 
-	templatePath, err := s.Storage.PrepareTemplateFile(p)
+	templatePath, err := s.Storage.PrepareTemplateFile(p.UUID)
 	if err != nil {
 		return err
 	}

@@ -120,15 +120,16 @@ func TestProject_IsValid(t *testing.T) {
 		assert.False(t, isValid)
 	})
 
-	t.Run("should panic for non-template project type", func(t *testing.T) {
+	t.Run("should return false for non-template project type", func(t *testing.T) {
 		// given
 		p := project.Project{
 			Type: project.TypeTmuxSession,
 		}
 
+		// when
+		isValid := p.IsValid()
+
 		// then
-		assert.Panics(t, func() {
-			p.IsValid()
-		})
+		assert.False(t, isValid)
 	})
 }
