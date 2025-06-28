@@ -18,10 +18,10 @@ Thop is designed to be lightweight, simple to install, and extremely quick to us
 - [tmux](https://github.com/tmux/tmux) 1.8+ (except for 2.5)
 
 ## Installation
-Run below script to install the latest release:
+Run below script in your terminal to install the latest release:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/wezik/thop/master/install.sh | sh
+curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/wezik/thop/develop/install.sh | sh
 ```
 
 ## Usage
@@ -96,10 +96,10 @@ template:
 All fields are optional unless stated as `(required)`
 
 ## Current state
-This project is in a somewhat early experimental stage, it's destination is set but things can still change.
+This project follows [Semantic Versioning](https://semver.org/), but currently it's at version v0 as it's in development.
+Destination is set but things can still change and break backwards compatibility; That includes templates they are not getting migrations until v1.
 
 ### TODO's:
-- Setting active window / pane
 - Integration tests
 - Review the Makefile
 - Fix: Trying to edit a template with invalid yaml crash
@@ -108,3 +108,8 @@ This project is in a somewhat early experimental stage, it's destination is set 
 - A general config file
 - Video showcase in README
 - Opt in clearing of executed shell commands
+
+- Make run paramter take in multi line string instead of array
+
+### Post v1 ideas:
+- Migrations for template versions
