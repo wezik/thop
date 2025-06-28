@@ -21,9 +21,7 @@ Thop is designed to be lightweight, simple to install, and extremely quick to us
 Run below script to install the latest release:
 
 ```bash
-curl -L https://github.com/wezik/thop/releases/latest/download/thop -o ./thop
-chmod +x ./thop
-sudo mv ./thop /usr/local/bin/
+curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/wezik/thop/master/install.sh | sh
 ```
 
 ## Usage
