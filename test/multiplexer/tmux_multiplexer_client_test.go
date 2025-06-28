@@ -362,6 +362,17 @@ func Test_TmuxClient_SendKeys(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
+
+	t.Run("handles empty keys idempotently", func(t *testing.T) {
+		// given
+		client := multiplexer.TmuxClientImpl{}
+
+		// when
+		err := client.SendKeys("%id", "")
+
+		// then
+		assert.Nil(t, err)
+	})
 }
 
 func Test_Client_NewWindow(t *testing.T) {

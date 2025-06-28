@@ -152,7 +152,12 @@ func (m *TmuxMultiplexer) assembleSession(sn SessionName, p project.Project) (er
 		for _, pID := range pIDs {
 			w := windows[wID]
 			p := panes[pID]
-			cmds := slices.Concat(t.Commands, w.Commands, p.Commands)
+
+			tKeys := commandToKeys(t.Commands)
+			wKeys := commandToKeys(w.Commands)
+			pKeys := commandToKeys(p.Commands)
+
+			cmds := slices.Concat(tKeys, wKeys, pKeys)
 			for _, keys := range cmds {
 				if err = m.Client.SendKeys(pID, keys); err != nil {
 					return err

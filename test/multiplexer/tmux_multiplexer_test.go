@@ -52,7 +52,7 @@ func (m *MockTmuxClient) NewWindow(
 
 func (m *MockTmuxClient) SendKeys(
 	paneID multiplexer.PaneID,
-	keys command.Command,
+	keys string,
 ) error {
 	args := m.Called(paneID, keys)
 	return args.Error(0)
@@ -113,7 +113,7 @@ func Test_AttachProject(t *testing.T) {
 			Name: "foo",
 			Template: template.Template{
 				Root:     root,
-				Commands: []command.Command{"echo hello"},
+				Commands: command.Command("echo hello"),
 				Windows: []window.Window{
 					{
 						Root:   "/project",
@@ -122,13 +122,13 @@ func Test_AttachProject(t *testing.T) {
 						Active: true,
 					},
 					{
-						Commands: []command.Command{"ls"},
+						Commands: command.Command("ls"),
 						Panes: []pane.Pane{
 							{
 								Active: true,
 							},
 							{
-								Commands: []command.Command{"echo pane"},
+								Commands: command.Command("echo pane"),
 							},
 						},
 						Layout: window.LayoutMainVertical,
@@ -145,14 +145,14 @@ func Test_AttachProject(t *testing.T) {
 
 		mockClient.On("SetLayout", w2ID, p.Template.Windows[1].Layout).Return(nil)
 
-		mockClient.On("SendKeys", p1ID, command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", p1ID, "echo hello").Return(nil).Once()
 
-		mockClient.On("SendKeys", p2ID, command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", p2ID, command.Command("ls")).Return(nil).Once()
+		mockClient.On("SendKeys", p2ID, "echo hello").Return(nil).Once()
+		mockClient.On("SendKeys", p2ID, "ls").Return(nil).Once()
 
-		mockClient.On("SendKeys", p3ID, command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", p3ID, command.Command("ls")).Return(nil).Once()
-		mockClient.On("SendKeys", p3ID, command.Command("echo pane")).Return(nil).Once()
+		mockClient.On("SendKeys", p3ID, "echo hello").Return(nil).Once()
+		mockClient.On("SendKeys", p3ID, "ls").Return(nil).Once()
+		mockClient.On("SendKeys", p3ID, "echo pane").Return(nil).Once()
 
 		mockClient.On("SetActiveWindow", w1ID).Return(nil).Once()
 		mockClient.On("SetActivePane", p2ID).Return(nil).Once()
@@ -180,7 +180,7 @@ func Test_AttachProject(t *testing.T) {
 			Name: "foo",
 			Template: template.Template{
 				Root:     root,
-				Commands: []command.Command{"echo hello"},
+				Commands: "echo hello",
 				Windows: []window.Window{
 					{
 						Root:   "/project",
@@ -188,11 +188,11 @@ func Test_AttachProject(t *testing.T) {
 						Layout: window.LayoutTiled,
 					},
 					{
-						Commands: []command.Command{"ls"},
+						Commands: "ls",
 						Panes: []pane.Pane{
 							{},
 							{
-								Commands: []command.Command{"echo pane"},
+								Commands: "echo pane",
 							},
 						},
 						Layout: window.LayoutTiled,
@@ -260,7 +260,7 @@ func Test_AttachProject(t *testing.T) {
 			Name: "foo",
 			Template: template.Template{
 				Root:     root,
-				Commands: []command.Command{"echo hello"},
+				Commands: "echo hello",
 				Windows: []window.Window{
 					{
 						Root:   "/project",
@@ -268,11 +268,11 @@ func Test_AttachProject(t *testing.T) {
 						Layout: window.LayoutTiled,
 					},
 					{
-						Commands: []command.Command{"ls"},
+						Commands: "ls",
 						Panes: []pane.Pane{
 							{},
 							{
-								Commands: []command.Command{"echo pane"},
+								Commands: "echo pane",
 							},
 						},
 						Layout: window.LayoutMainVertical,
@@ -289,14 +289,14 @@ func Test_AttachProject(t *testing.T) {
 
 		mockClient.On("SetLayout", w2ID, p.Template.Windows[1].Layout).Return(nil)
 
-		mockClient.On("SendKeys", p1ID, command.Command("echo hello")).Return(nil).Once()
+		mockClient.On("SendKeys", p1ID, "echo hello").Return(nil).Once()
 
-		mockClient.On("SendKeys", p2ID, command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", p2ID, command.Command("ls")).Return(nil).Once()
+		mockClient.On("SendKeys", p2ID, "echo hello").Return(nil).Once()
+		mockClient.On("SendKeys", p2ID, "ls").Return(nil).Once()
 
-		mockClient.On("SendKeys", p3ID, command.Command("echo hello")).Return(nil).Once()
-		mockClient.On("SendKeys", p3ID, command.Command("ls")).Return(nil).Once()
-		mockClient.On("SendKeys", p3ID, command.Command("echo pane")).Return(nil).Once()
+		mockClient.On("SendKeys", p3ID, "echo hello").Return(nil).Once()
+		mockClient.On("SendKeys", p3ID, "ls").Return(nil).Once()
+		mockClient.On("SendKeys", p3ID, "echo pane").Return(nil).Once()
 
 		mockClient.On("SwitchSession", sn).Return(nil).Once()
 

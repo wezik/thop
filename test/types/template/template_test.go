@@ -34,7 +34,7 @@ func Test_WithDefaults(t *testing.T) {
 					Name: "foo",
 					Panes: []pane.Pane{
 						{
-							Commands: []command.Command{"echo foo"},
+							Commands: command.Command("echo foo"),
 						},
 					},
 				},
@@ -48,7 +48,7 @@ func Test_WithDefaults(t *testing.T) {
 		temp = temp.WithDefaults()
 
 		// then
-		assert.Equal(t, pane.Pane{Commands: []command.Command{"echo foo"}}, temp.Windows[0].Panes[0])
+		assert.Equal(t, pane.Pane{Commands: command.Command("echo foo")}, temp.Windows[0].Panes[0])
 		assert.Equal(t, pane.Pane{}, temp.Windows[1].Panes[0])
 	})
 }
