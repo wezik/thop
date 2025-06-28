@@ -62,7 +62,7 @@ func Info(msg string, args ...any) {
 
 func Message(msg string) {
 	if log != nil {
-		log.Info("Brodcasting message: " + msg)
+		log.Info("Broadcasting message: " + msg)
 	}
 	fmt.Println(msg)
 }

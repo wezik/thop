@@ -68,10 +68,10 @@ Templates are blue-prints for your sessions, they are stored in `$XDG_CONFIG/tho
 Example template:
 ```yaml
 name: Example project name                  # (required) Name used for opening / selecting the project
-version: 1
+version: 1                                  # Version of the template, used for migrations (leave it as is)
 template:
   name: Optional session name               # Name of the session, will use project name if not present
-  root: /home/foobar/projects/some_project  # (required) Root directory for this session
+  root: /home/foobar/projects/some_project  # Root directory for this session
   run:                                      # List of commands to be executed in all windows
   - echo 'Hello world'
   windows:                                  # List of windows to be created

@@ -57,7 +57,6 @@ func Test_IsValid(t *testing.T) {
 	t.Run("returns true for valid template", func(t *testing.T) {
 		// given
 		temp := template.Template{
-			Root: "/foo/bar",
 			Windows: []window.Window{
 				{
 					Layout: window.LayoutTiled,
@@ -71,25 +70,6 @@ func Test_IsValid(t *testing.T) {
 
 		// then
 		assert.True(t, isValid)
-	})
-
-	t.Run("returns false if root is empty", func(t *testing.T) {
-		// given
-		temp := template.Template{
-			Root: "",
-			Windows: []window.Window{
-				{
-					Layout: window.LayoutTiled,
-					Panes:  []pane.Pane{{}},
-				},
-			},
-		}
-
-		// when
-		isValid := temp.IsValid()
-
-		// then
-		assert.False(t, isValid)
 	})
 
 	t.Run("returns false if no windows", func(t *testing.T) {

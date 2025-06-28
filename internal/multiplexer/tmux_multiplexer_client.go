@@ -101,7 +101,9 @@ func (c *TmuxClientImpl) NewSession(sn SessionName, t template.Template) (Window
 
 	cmd := exec.Command("tmux", "new-session", "-d")
 	cmd.Args = append(cmd.Args, "-s", string(sn))
-	cmd.Args = append(cmd.Args, "-c", string(t.Root))
+	if t.Root != "" {
+		cmd.Args = append(cmd.Args, "-c", string(t.Root))
+	}
 
 	if mw.Name != "" {
 		cmd.Args = append(cmd.Args, "-n", string(mw.Name))
@@ -138,8 +140,7 @@ func (c *TmuxClientImpl) NewWindow(sn SessionName, tr template.Root, w window.Wi
 
 	if w.Root != "" {
 		cmd.Args = append(cmd.Args, "-c", string(w.Root))
-	} else {
-		// specify the root explicitly, otherwise it will nest at working directory
+	} else if tr != "" {
 		cmd.Args = append(cmd.Args, "-c", string(tr))
 	}
 
@@ -207,17 +208,15 @@ func (c *TmuxClientImpl) NewPane(
 ) (PaneID, error) {
 	cmd := exec.Command("tmux", "split-window", "-t", string(wID))
 
-	var root string
 	// pane root > window root > template root
 	if p.Root != "" {
-		root = string(p.Root)
+		cmd.Args = append(cmd.Args, "-c", string(p.Root))
 	} else if wr != "" {
-		root = string(wr)
-	} else {
-		root = string(tr)
+		cmd.Args = append(cmd.Args, "-c", string(wr))
+	} else if tr != "" {
+		cmd.Args = append(cmd.Args, "-c", string(tr))
 	}
 
-	cmd.Args = append(cmd.Args, "-c", root)
 	cmd.Args = append(cmd.Args, "-P", "-F", "#{pane_id}")
 
 	o, _, err := c.E.Execute(cmd)
