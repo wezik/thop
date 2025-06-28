@@ -297,6 +297,42 @@ func Test_Client_NewSession(t *testing.T) {
 		assert.Equal(t, multiplexer.PaneID("%2"), pID)
 		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
+
+	t.Run("skips -c flag if all roots are empty", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"new-session",
+				"-d",
+				"-s",
+				"mysession",
+				"-P", "-F", "#{window_id} #{pane_id}",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		tmpl := template.Template{
+			Windows: []window.Window{
+				{
+					Panes: []pane.Pane{{}},
+				},
+			},
+		}
+		wID, pID, err := client.NewSession("mysession", tmpl)
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
 }
 
 func Test_TmuxClient_SendKeys(t *testing.T) {
@@ -432,6 +468,38 @@ func Test_Client_NewWindow(t *testing.T) {
 			},
 		}
 		wID, pID, err := client.NewWindow("mysession", "/home/test", win)
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.WindowID("@1"), wID)
+		assert.Equal(t, multiplexer.PaneID("%2"), pID)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
+	})
+
+	t.Run("skips -c flag if all roots are empty", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("@1 %2\n", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"new-window",
+				"-d",
+				"-t",
+				"mysession",
+				"-n",
+				"main",
+				"-P", "-F", "#{window_id} #{pane_id}",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		win := window.Window{Name: "main", Panes: []pane.Pane{{}}}
+		wID, pID, err := client.NewWindow("mysession", "", win)
 
 		// then
 		assert.Nil(t, err)
@@ -645,6 +713,33 @@ func Test_NewPane(t *testing.T) {
 		// then
 		assert.True(t, multiplexer.ErrFailedToCreatePane.Equal(err))
 		executor.AssertExpectations(t)
+	})
+
+	t.Run("skips -c flag if root is empty", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("%1\n", 0, nil)
+		expectedCmd := [][]string{
+			{
+				"tmux",
+				"split-window",
+				"-t",
+				"@1",
+				"-P", "-F", "#{pane_id}",
+			},
+		}
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		pID, err := client.NewPane("@1", "", "", pane.Pane{})
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, multiplexer.PaneID("%1"), pID)
+		assert.Equal(t, expectedCmd, executor.ExecutedCommands)
 	})
 }
 

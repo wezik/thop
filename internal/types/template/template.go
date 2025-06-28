@@ -35,10 +35,6 @@ func (t *Template) WithDefaults() Template {
 }
 
 func (t *Template) IsValid() bool {
-	if t.Root == "" {
-		return false
-	}
-
 	if len(t.Windows) < 1 { // at least main window is required
 		return false
 	}
