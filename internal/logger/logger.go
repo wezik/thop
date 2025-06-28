@@ -26,32 +26,43 @@ func Init(logFile string) error {
 }
 
 func Cmd(msg string) {
-	log.Info("Executing in shell: " + msg)
+	if log != nil {
+		log.Info("Executing in shell: " + msg)
+	}
 }
 
 func Warn(msg string, args ...any) {
-	log.Warn(msg, args...)
+	if log != nil {
+		log.Warn(msg, args...)
+	}
 }
 
 func Error(err error) {
 	switch err := err.(type) {
 
 	case problem.Problem:
-		log.Error(string(err.Key) + ": " + err.Message)
+		if log != nil {
+			log.Error(string(err.Key) + ": " + err.Message)
+		}
 		fmt.Println(err.Key+":", err.Message)
 
 	default:
-		log.Error(err.Error())
+		if log != nil {
+			log.Error(err.Error())
+		}
 		fmt.Println("Unknown error:", err.Error())
-
 	}
 }
 
 func Info(msg string, args ...any) {
-	log.Info(msg, args...)
+	if log != nil {
+		log.Info(msg, args...)
+	}
 }
 
 func Message(msg string) {
-	log.Info("Brodcasting message: " + msg)
+	if log != nil {
+		log.Info("Brodcasting message: " + msg)
+	}
 	fmt.Println(msg)
 }

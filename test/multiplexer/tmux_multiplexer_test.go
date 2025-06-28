@@ -3,7 +3,6 @@ package multiplexer_test
 import (
 	"errors"
 	"testing"
-	"thop/internal/logger"
 	"thop/internal/multiplexer"
 	"thop/internal/types/command"
 	"thop/internal/types/pane"
@@ -14,10 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-func init() {
-	logger.Init("")
-}
 
 type MockTmuxClient struct {
 	mock.Mock

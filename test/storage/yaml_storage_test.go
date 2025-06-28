@@ -4,7 +4,6 @@ import (
 	"os"
 	"testing"
 	"thop/internal/config"
-	"thop/internal/logger"
 	"thop/internal/storage"
 	"thop/internal/types/project"
 	"thop/internal/types/template"
@@ -13,10 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-func init() {
-	logger.Init("")
-}
 
 func Test_List(t *testing.T) {
 	cfg := &config.Config{
