@@ -20,6 +20,10 @@ type FzfProjectSelector struct {
 	E executor.CommandExecutor
 }
 
+func NewFzfProjectSelector(e executor.CommandExecutor) ProjectSelector {
+	return &FzfProjectSelector{E: e}
+}
+
 const (
 	ErrSelectorCancelled problem.Key = "SELECTOR_CANCELLED"
 	ErrSelectorFailed    problem.Key = "SELECTOR_FAILED"

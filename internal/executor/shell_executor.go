@@ -11,7 +11,10 @@ type CommandExecutor interface {
 	ExecuteInteractive(cmd *exec.Cmd) (int, error)
 }
 
-type ShellExecutor struct {
+type ShellExecutor struct{}
+
+func NewShellExecutor() CommandExecutor {
+	return &ShellExecutor{}
 }
 
 func (s *ShellExecutor) Execute(cmd *exec.Cmd) (string, int, error) {

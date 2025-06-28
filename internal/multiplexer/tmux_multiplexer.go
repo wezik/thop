@@ -2,6 +2,7 @@ package multiplexer
 
 import (
 	"fmt"
+	"os"
 	"slices"
 	"thop/internal/logger"
 	"thop/internal/types/pane"
@@ -18,6 +19,10 @@ type Multiplexer interface {
 type TmuxMultiplexer struct {
 	ActiveTmuxSession string
 	Client            TmuxClient
+}
+
+func NewTmuxMultiplexer(c TmuxClient) Multiplexer {
+	return &TmuxMultiplexer{Client: c, ActiveTmuxSession: os.Getenv("TMUX")}
 }
 
 func (m *TmuxMultiplexer) AttachProject(p project.Project) error {

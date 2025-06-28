@@ -26,6 +26,10 @@ type YamlStorage struct {
 	FileSystem fsystem.FileSystem
 }
 
+func NewYamlStorage(c *config.Config, f fsystem.FileSystem) Storage {
+	return &YamlStorage{Config: c, FileSystem: f}
+}
+
 const (
 	ErrFailedToCreateTemplateDir problem.Key = "STORAGE_FAILED_TO_CREATE_TEMPLATE_DIR"
 	ErrFailedToDeleteProject     problem.Key = "STORAGE_FAILED_TO_DELETE_PROJECT"
@@ -74,7 +78,8 @@ func (s *YamlStorage) List() ([]project.Project, error) {
 
 		var p project.Project
 		if err = yaml.Unmarshal(bytes, &p); err != nil {
-			logger.Warn("Failed to parse project template", err)
+			log := fmt.Sprintf("Failed to unmarshal project template %s", templateFile)
+			logger.Warn(log, err)
 			continue
 		}
 

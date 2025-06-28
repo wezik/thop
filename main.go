@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"thop/cmd"
+	thop "thop/cmd"
 	"thop/internal/config"
 	"thop/internal/executor"
 	"thop/internal/fsystem"
@@ -12,42 +11,55 @@ import (
 	"thop/internal/selector"
 	"thop/internal/service"
 	"thop/internal/storage"
+
+	"go.uber.org/dig"
 )
 
 func main() {
-	var logFile string
+	container := buildContainer()
 
-	rootCmd := cmd.GetRootCmd()
-	rootCmd.PersistentFlags().StringVar(&logFile, "log-file", "", "Path to the log file")
+	var app *thop.Thop
+	container.Invoke(func(t *thop.Thop) { app = t })
 
-	// a bit of manual DI
-	c, err := config.New()
-	if err != nil {
-		fmt.Println("Failed to load config:", err)
-		os.Exit(1)
+	logFile := app.GetLogFileFlag()
+	initLogger(logFile, container)
+
+	exitCode, _ := app.Run()
+	os.Exit(exitCode)
+}
+
+func buildContainer() *dig.Container {
+	container := dig.New()
+
+	container.Provide(config.NewConfig)
+	container.Provide(fsystem.NewOsFileSystem)
+	container.Provide(executor.NewShellExecutor)
+
+	container.Provide(multiplexer.NewTmuxClientImpl)
+	container.Provide(multiplexer.NewTmuxMultiplexer)
+
+	container.Provide(selector.NewFzfProjectSelector)
+
+	container.Provide(storage.NewYamlStorage)
+
+	container.Provide(service.NewAppService)
+
+	container.Provide(thop.New)
+
+	return container
+}
+
+func initLogger(logFile string, container *dig.Container) error {
+	var c *config.Config
+	if err := container.Invoke(func(config *config.Config) {
+		c = config
+	}); err != nil {
+		return err
 	}
 
 	if logFile == "" {
 		logFile = c.GetConfigDir() + "/thop.log"
 	}
 
-	if err := logger.Init(logFile); err != nil {
-		fmt.Println("Failed to initialize logger:", err)
-		os.Exit(1)
-	}
-
-	s := &storage.YamlStorage{Config: c, FileSystem: &fsystem.OsFileSystem{}}
-	e := &executor.ShellExecutor{}
-	cmd.AppService = &service.AppService{
-		Selector: &selector.FzfProjectSelector{E: e},
-		Multiplexer: &multiplexer.TmuxMultiplexer{
-			ActiveTmuxSession: os.Getenv("TMUX"),
-			Client:            &multiplexer.TmuxClientImpl{E: e},
-		},
-		Storage: s,
-		Config:  c,
-		E:       e,
-	}
-
-	cmd.Execute()
+	return logger.Init(logFile)
 }

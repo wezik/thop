@@ -31,6 +31,10 @@ type TmuxClientImpl struct {
 	E executor.CommandExecutor
 }
 
+func NewTmuxClientImpl(e executor.CommandExecutor) TmuxClient {
+	return &TmuxClientImpl{E: e}
+}
+
 const (
 	ErrFailedToAttachSession         problem.Key = "TMUX_FAILED_TO_ATTACH_SESSION"
 	ErrFailedToSwitchSession         problem.Key = "TMUX_FAILED_TO_SWITCH_SESSION"
