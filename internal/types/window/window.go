@@ -26,12 +26,12 @@ var layouts = map[string]Layout{
 }
 
 type Window struct {
-	Name     Name              `yaml:"name,omitempty"`
-	Root     Root              `yaml:"root,omitempty"`
-	Commands []command.Command `yaml:"run,omitempty"`
-	Layout   Layout            `yaml:"layout,omitempty"`
-	Panes    []pane.Pane       `yaml:"panes,omitempty"`
-	Active   bool              `yaml:"active,omitempty"`
+	Name     Name            `yaml:"name,omitempty"`
+	Root     Root            `yaml:"root,omitempty"`
+	Commands command.Command `yaml:"run,omitempty"`
+	Layout   Layout          `yaml:"layout,omitempty"`
+	Panes    []pane.Pane     `yaml:"panes,omitempty"`
+	Active   bool            `yaml:"active,omitempty"`
 }
 
 func (w *Window) WithDefaults() Window {

@@ -72,25 +72,22 @@ version: 1                                  # Version of the template, used for 
 template:
   name: Optional session name               # Name of the session, will use project name if not present
   root: /home/foobar/projects/some_project  # Root directory for this session
-  run:                                      # List of commands to be executed in all windows
-  - echo 'Hello world'
+  run: echo 'Hello world'                   # Multiline string for shell commands to be executed in this session
   windows:                                  # List of windows to be created
   - name: main                              # Name of the window
     root: /optional/root/dir                # Root directory for this window
     layout: tiled                           # Layout for this window (tiled, main-vertical, main-horizontal, even-vertical, even-horizontal)
-    run:                                    # List of commands to be executed in all panes
-    - ls
+    run: ls                                 # Multiline string for shell commands to be executed in this window
     panes:                                  # List of panes to be created
-    - run:
-      - nvim                                # List of commands to be executed in this pane
+    - run: nvim                                # Multiline string for shell commands to be executed in this pane
     - root: /optional/root/dir/pane         # Root directory for this pane
       active: true                          # Set as active pane
   - name: logs
     active: true                            # Set as active window
-    run:
-    - mkdir ./tmp
-    - touch ./tmp/logs.txt
-    - tail -F ./tmp/logs.txt
+    run: |
+      mkdir ./tmp
+      touch ./tmp/logs.txt
+      tail -F ./tmp/logs.txt
 ```
 
 All fields are optional unless stated as `(required)`
@@ -108,7 +105,6 @@ Destination is set but things can still change and break backwards compatibility
 - Video showcase in README
 - Opt in clearing of executed shell commands
 - Setup and destroy blocks
-- Make run parameter take in multi line string instead of array
 
 ### Post v1 ideas:
 - Migrations for template versions

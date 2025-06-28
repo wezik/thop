@@ -7,7 +7,6 @@ import (
 	"strings"
 	"thop/internal/executor"
 	"thop/internal/problem"
-	"thop/internal/types/command"
 	"thop/internal/types/pane"
 	"thop/internal/types/template"
 	"thop/internal/types/window"
@@ -22,7 +21,7 @@ type TmuxClient interface {
 	NewPane(WindowID, template.Root, window.Root, pane.Pane) (PaneID, error)
 	NewSession(SessionName, template.Template) (WindowID, PaneID, error)
 	NewWindow(SessionName, template.Root, window.Window) (WindowID, PaneID, error)
-	SendKeys(PaneID, command.Command) error
+	SendKeys(PaneID, string) error
 	SetActivePane(PaneID) error
 	SetActiveWindow(WindowID) error
 	SetLayout(WindowID, window.Layout) error
@@ -161,9 +160,13 @@ func (c *TmuxClientImpl) NewWindow(sn SessionName, tr template.Root, w window.Wi
 	return WindowID(output[0]), PaneID(output[1]), nil
 }
 
-func (c *TmuxClientImpl) SendKeys(pID PaneID, keys command.Command) error {
+func (c *TmuxClientImpl) SendKeys(pID PaneID, keys string) error {
+	if keys == "" {
+		return nil // indempotent handling of empty keys
+	}
+
 	cmd := exec.Command("tmux", "send-keys", "-t", string(pID))
-	cmd.Args = append(cmd.Args, string(keys))
+	cmd.Args = append(cmd.Args, keys)
 	cmd.Args = append(cmd.Args, "C-m")
 
 	if _, _, err := c.E.Execute(cmd); err != nil {
