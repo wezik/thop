@@ -3,7 +3,6 @@ package multiplexer_test
 import (
 	"errors"
 	"testing"
-	"thop/internal/logger"
 	"thop/internal/multiplexer"
 	"thop/internal/types/command"
 	"thop/internal/types/pane"
@@ -14,10 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-func init() {
-	logger.Init("")
-}
 
 type MockTmuxClient struct {
 	mock.Mock
@@ -93,6 +88,16 @@ func (m *MockTmuxClient) SetLayout(wID multiplexer.WindowID, wl window.Layout) e
 	return args.Error(0)
 }
 
+func (m *MockTmuxClient) SetActivePane(pID multiplexer.PaneID) error {
+	args := m.Called(pID)
+	return args.Error(0)
+}
+
+func (m *MockTmuxClient) SetActiveWindow(wID multiplexer.WindowID) error {
+	args := m.Called(wID)
+	return args.Error(0)
+}
+
 func Test_AttachProject(t *testing.T) {
 	t.Run("assembles and attaches to session if it doesn't exist", func(t *testing.T) {
 		// given
@@ -114,11 +119,14 @@ func Test_AttachProject(t *testing.T) {
 						Root:   "/project",
 						Panes:  []pane.Pane{{}},
 						Layout: window.LayoutTiled,
+						Active: true,
 					},
 					{
 						Commands: []command.Command{"ls"},
 						Panes: []pane.Pane{
-							{},
+							{
+								Active: true,
+							},
 							{
 								Commands: []command.Command{"echo pane"},
 							},
@@ -145,6 +153,9 @@ func Test_AttachProject(t *testing.T) {
 		mockClient.On("SendKeys", p3ID, command.Command("echo hello")).Return(nil).Once()
 		mockClient.On("SendKeys", p3ID, command.Command("ls")).Return(nil).Once()
 		mockClient.On("SendKeys", p3ID, command.Command("echo pane")).Return(nil).Once()
+
+		mockClient.On("SetActiveWindow", w1ID).Return(nil).Once()
+		mockClient.On("SetActivePane", p2ID).Return(nil).Once()
 
 		mockClient.On("AttachSession", sn).Return(nil).Once()
 

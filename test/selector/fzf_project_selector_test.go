@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os/exec"
 	"testing"
-	"thop/internal/logger"
 	"thop/internal/selector"
 	"thop/internal/types/project"
 	"thop/test"
@@ -13,10 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-func init() {
-	logger.Init("")
-}
 
 func Test_SelectFrom(t *testing.T) {
 	t.Run("selects from items", func(t *testing.T) {

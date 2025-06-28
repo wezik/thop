@@ -686,3 +686,78 @@ func Test_SetLayout(t *testing.T) {
 		executor.AssertExpectations(t)
 	})
 }
+
+func Test_SetActivePane(t *testing.T) {
+	t.Run("sets active pane", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 0, nil).Once()
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.SetActivePane(multiplexer.PaneID("%1"))
+
+		// then
+		assert.Nil(t, err)
+		executor.AssertExpectations(t)
+		assert.Equal(t, [][]string{{"tmux", "select-pane", "-t", "%1"}}, executor.ExecutedCommands)
+	})
+
+	t.Run("returns error if command fails", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 1, errors.New("some error")).Once()
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.SetActivePane(multiplexer.PaneID("%1"))
+
+		// then
+		assert.True(t, multiplexer.ErrFailedToSetActivePane.Equal(err))
+		executor.AssertExpectations(t)
+		assert.Equal(t, [][]string{{"tmux", "select-pane", "-t", "%1"}}, executor.ExecutedCommands)
+	})
+}
+
+func Test_SetActiveWindow(t *testing.T) {
+	t.Run("sets active window", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 0, nil).Once()
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.SetActiveWindow("@1")
+
+		// then
+		assert.Nil(t, err)
+		executor.AssertExpectations(t)
+		assert.Equal(t, [][]string{{"tmux", "select-window", "-t", "@1"}}, executor.ExecutedCommands)
+	})
+
+	t.Run("returns error if command fails", func(t *testing.T) {
+		// given
+		executor := new(MockCommandExecutor)
+		executor.On("Execute", mock.Anything).Return("", 1, errors.New("some error")).Once()
+
+		client := multiplexer.TmuxClientImpl{
+			E: executor,
+		}
+
+		// when
+		err := client.SetActiveWindow("@1")
+
+		// then
+		assert.True(t, multiplexer.ErrFailedToSetActiveWindow.Equal(err))
+		executor.AssertExpectations(t)
+		assert.Equal(t, [][]string{{"tmux", "select-window", "-t", "@1"}}, executor.ExecutedCommands)
+	})
+}
