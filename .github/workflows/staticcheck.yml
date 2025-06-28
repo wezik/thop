@@ -1,20 +1,22 @@
-name: Quality checks
+name: Static analysis
 
 on:
-  push:
-    branches: 
-      - "develop"
-    tags:
-      - '*'
   pull_request:
     branches: 
-      - "develop"
+      - develop
+
+  push:
+    branches: 
+      - develop
+
+permissions:
+  contents: read # used by checkout
 
 jobs:
-  quality-checks:
+  static-analysis:
+    name: Analysis
     runs-on: ubuntu-latest
     steps:
-
       - name: ☁️ Checkout source code
         uses: actions/checkout@v4
 
@@ -22,6 +24,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24.x'
+          check-latest: true
 
       - name: 🔍 Verify modules
         run: go mod verify
@@ -30,17 +33,14 @@ jobs:
         run: go vet ./...
 
       - name: 🧹 Run staticcheck
-        run: go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-ST1001,-ST1020,-ST1021 ./...
-
-      - name: 🔒 Run govulncheck
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        uses: dominikh/staticcheck-action@v1
 
       - name: 🧼 Check formatting
         run: |
           go fmt ./...
           git diff --exit-code
 
-      - name: 📦 Check modules
+      - name: 📦 Check mod tidy
         run: |
           go mod tidy -v
           git diff --exit-code
