@@ -23,6 +23,8 @@ type TmuxClient interface {
 	NewSession(SessionName, template.Template) (WindowID, PaneID, error)
 	NewWindow(SessionName, template.Root, window.Window) (WindowID, PaneID, error)
 	SendKeys(PaneID, command.Command) error
+	SetActivePane(PaneID) error
+	SetActiveWindow(WindowID) error
 	SetLayout(WindowID, window.Layout) error
 	SwitchSession(SessionName) error
 }
@@ -43,6 +45,8 @@ const (
 	ErrFailedToSetLayout             problem.Key = "TMUX_FAILED_TO_SET_LAYOUT"
 	ErrTriedToBuildFromActiveSession problem.Key = "TMUX_TRIED_TO_BUILD_FROM_ACTIVE_SESSION"
 	ErrFailedToCreatePane            problem.Key = "TMUX_FAILED_TO_CREATE_PANE"
+	ErrFailedToSetActiveWindow       problem.Key = "TMUX_FAILED_TO_SET_ACTIVE_WINDOW"
+	ErrFailedToSetActivePane         problem.Key = "TMUX_FAILED_TO_SET_ACTIVE_PANE"
 )
 
 func (c *TmuxClientImpl) IsTmuxServerRunning() bool {
@@ -225,6 +229,24 @@ func (c *TmuxClientImpl) SetLayout(wID WindowID, l window.Layout) error {
 	cmd := exec.Command("tmux", "select-layout", "-t", string(wID), string(l))
 	if _, _, err := c.E.Execute(cmd); err != nil {
 		return buildExitCodeError(ErrFailedToSetLayout, err)
+	}
+
+	return nil
+}
+
+func (c *TmuxClientImpl) SetActivePane(pID PaneID) error {
+	cmd := exec.Command("tmux", "select-pane", "-t", string(pID))
+	if _, _, err := c.E.Execute(cmd); err != nil {
+		return buildExitCodeError(ErrFailedToSetActivePane, err)
+	}
+
+	return nil
+}
+
+func (c *TmuxClientImpl) SetActiveWindow(wID WindowID) error {
+	cmd := exec.Command("tmux", "select-window", "-t", string(wID))
+	if _, _, err := c.E.Execute(cmd); err != nil {
+		return buildExitCodeError(ErrFailedToSetActiveWindow, err)
 	}
 
 	return nil

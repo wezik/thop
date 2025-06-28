@@ -156,6 +156,26 @@ func (m *TmuxMultiplexer) assembleSession(sn SessionName, p project.Project) (er
 		}
 	}
 
+	// set active windows and panes
+	for wID, pIDs := range windowIdsToPaneIds {
+
+		for _, pID := range pIDs {
+			p := panes[pID]
+			if p.Active {
+				if err = m.Client.SetActivePane(pID); err != nil {
+					return err
+				}
+			}
+		}
+
+		w := windows[wID]
+		if w.Active {
+			if err = m.Client.SetActiveWindow(wID); err != nil {
+				return err
+			}
+		}
+	}
+
 	logger.Message(fmt.Sprintf("Session %s assembled", sn))
 	return nil
 }
