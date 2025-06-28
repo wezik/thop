@@ -12,7 +12,7 @@ type FileSystem interface {
 
 type OsFileSystem struct{}
 
-func NewOsFileSystem() *OsFileSystem {
+func NewOsFileSystem() FileSystem {
 	return &OsFileSystem{}
 }
 

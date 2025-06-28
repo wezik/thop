@@ -4,7 +4,6 @@ import (
 	"os/exec"
 	"thop/internal/config"
 	"thop/internal/executor"
-
 	"thop/internal/multiplexer"
 	"thop/internal/problem"
 	"thop/internal/selector"
@@ -27,8 +26,23 @@ type AppService struct {
 	Multiplexer multiplexer.Multiplexer
 	Storage     storage.Storage
 	Config      *config.Config
+	E           executor.CommandExecutor
+}
 
-	E executor.CommandExecutor
+func NewAppService(
+	se selector.ProjectSelector,
+	mu multiplexer.Multiplexer,
+	st storage.Storage,
+	c *config.Config,
+	e executor.CommandExecutor,
+) Service {
+	return &AppService{
+		Selector:    se,
+		Multiplexer: mu,
+		Storage:     st,
+		Config:      c,
+		E:           e,
+	}
 }
 
 const (

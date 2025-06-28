@@ -11,7 +11,7 @@ type Config struct {
 	InsideTmux bool
 }
 
-func New() (*Config, error) {
+func NewConfig() (*Config, error) {
 	editor := os.Getenv("EDITOR")
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
