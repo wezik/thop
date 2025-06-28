@@ -162,7 +162,7 @@ func (c *TmuxClientImpl) NewWindow(sn SessionName, tr template.Root, w window.Wi
 
 func (c *TmuxClientImpl) SendKeys(pID PaneID, keys string) error {
 	if keys == "" {
-		return nil // indempotent handling of empty keys
+		return nil // idempotent handling of empty keys
 	}
 
 	cmd := exec.Command("tmux", "send-keys", "-t", string(pID))
