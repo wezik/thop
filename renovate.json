@@ -6,6 +6,10 @@
   ],
   "packageRules": [
     {
+      "matchDatasources": ["golang-version"],
+      "rangeStrategy": "bump"
+    },
+    {
       "matchManagers": ["gomod"],
       "postUpdateOptions": ["gomodTidy"]
     },
@@ -23,5 +27,5 @@
       "groupName": "github-actions"
     }
   ],
-  "prConcurrentLimit": 4
+  "prConcurrentLimit": 4,
 }
