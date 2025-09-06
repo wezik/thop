@@ -11,7 +11,7 @@ import (
 )
 
 type FzfSelector struct {
-	log log.Logger
+	log  log.Logger
 	exec platform.ExecFn
 }
 
@@ -20,7 +20,7 @@ func NewFzfSelector(
 	exec platform.ExecFn,
 ) selector.Selector {
 	return &FzfSelector{
-		log: log,
+		log:  log,
 		exec: exec,
 	}
 }

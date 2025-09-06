@@ -1,11 +1,11 @@
 package multiplexer
 
 import (
-	"thop/pkg/template"
 	"thop/pkg/session"
+	"thop/pkg/template"
 )
 
 type Multiplexer interface {
-	AttachTemplate(*template.Template) (error)
-	AttachSession(*session.Session) (error)
+	AttachTemplate(*template.Template) error
+	AttachSession(*session.Session) error
 }

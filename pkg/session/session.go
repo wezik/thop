@@ -1,7 +1,7 @@
 package session
 
 type Session struct {
-	name      string
+	name string
 }
 
 func (s *Session) Name() string {
@@ -10,6 +10,6 @@ func (s *Session) Name() string {
 
 func NewSession(name string) *Session {
 	return &Session{
-		name:      name,
+		name: name,
 	}
 }

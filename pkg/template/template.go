@@ -3,7 +3,7 @@ package template
 type FilePath string
 
 type File struct {
-	name     string
+	name string
 	path FilePath
 }
 
@@ -17,7 +17,7 @@ func (f *File) Path() FilePath {
 
 func NewFile(name string, filePath string) *File {
 	return &File{
-		name:     name,
+		name: name,
 		path: FilePath(filePath),
 	}
 }
@@ -28,5 +28,5 @@ type FileStorage interface {
 }
 
 type Template struct {
-	Name     string
+	Name string
 }

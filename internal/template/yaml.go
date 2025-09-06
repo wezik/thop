@@ -6,7 +6,7 @@ import (
 )
 
 type YamlStorage struct {
-	log log.Logger
+	log    log.Logger
 	config *TemplateConfig
 }
 
@@ -15,7 +15,7 @@ func NewYamlStorage(
 	config *TemplateConfig,
 ) template.FileStorage {
 	return &YamlStorage{
-		log: log,
+		log:    log,
 		config: config,
 	}
 }

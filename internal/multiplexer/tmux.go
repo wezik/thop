@@ -2,9 +2,9 @@ package multiplexer
 
 import (
 	"thop/pkg/log"
+	"thop/pkg/multiplexer"
 	"thop/pkg/session"
 	"thop/pkg/template"
-	"thop/pkg/multiplexer"
 )
 
 type TmuxMultiplexer struct {

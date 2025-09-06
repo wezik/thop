@@ -108,7 +108,7 @@ func (t *Thop) OpenSelect() (err error) {
 
 	for _, templateFile := range templateFiles {
 		entries = append(entries, &selector.TemplateEntry{
-			File: templateFile,
+			File:     templateFile,
 			IsActive: false,
 		})
 	}
