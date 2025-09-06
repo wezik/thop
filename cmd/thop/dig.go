@@ -3,6 +3,8 @@ package main
 import (
 	"thop/internal/log"
 	"thop/internal/platform"
+	"thop/internal/selector"
+	"thop/internal/template"
 	pkg_log "thop/pkg/log"
 	pkg_platform "thop/pkg/platform"
 	"thop/pkg/thop"
@@ -14,7 +16,11 @@ import (
 func dependencies() []any {
 	return []any{
 		thop.New,
+
 		groupLogger,
+
+		selector.NewFzfSelector,
+		template.NewFileSystemStorage,
 
 		platform.SystemExit,
 		platform.SystemGetwd,

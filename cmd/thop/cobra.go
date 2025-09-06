@@ -61,7 +61,7 @@ func createTemplate(thop *thop.Thop) *cobra.Command {
 		Use:     "create",
 		Short:   "Create session template",
 		Aliases: []string{"c", "a", "add", "new"},
-		RunE:    func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			createTemplate := action.CreateTemplate{
 				Name: name,
 				Path: path,

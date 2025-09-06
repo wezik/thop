@@ -4,20 +4,28 @@ import (
 	"thop/pkg/action"
 	"thop/pkg/log"
 	"thop/pkg/platform"
+	"thop/pkg/selector"
+	"thop/pkg/template"
 )
 
 type Thop struct {
-	log log.Logger
-	getwd platform.GetwdFn
+	log                 log.Logger
+	selector            selector.Selector
+	templateFileStorage template.FileStorage
+	getwd               platform.GetwdFn
 }
 
 func New(
 	log log.Logger,
+	selector selector.Selector,
+	templateFileStorage template.FileStorage,
 	getwd platform.GetwdFn,
 ) *Thop {
 	return &Thop{
-		log: log,
-		getwd: getwd,
+		log:                 log,
+		selector:            selector,
+		templateFileStorage: templateFileStorage,
+		getwd:               getwd,
 	}
 }
 
@@ -75,5 +83,22 @@ func (t *Thop) OpenSearch(act action.Search) (err error) {
 
 func (t *Thop) OpenSelect() (err error) {
 	t.log.Debug("Called OpenSelect")
+
+	var entries []selector.Entry
+
+	templateFiles, err := t.templateFileStorage.List()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, templateFile := range templateFiles {
+		entries = append(entries, &selector.TemplateEntry{
+			File: templateFile,
+			IsActive: false,
+		})
+	}
+
+	t.selector.SelectFrom(entries, selector.OperationOpen)
+
 	return
 }
