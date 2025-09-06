@@ -59,42 +59,42 @@ func (t *Thop) Create(act CreateTemplate) (err error) {
 }
 
 func (t *Thop) DeleteSearch(act Search) (err error) {
-	t.log.Debug("Called DeleteSearch with phrase \"" + act.Phrase + "\"")
+	t.log.Debug("Called delete with search phrase \"" + act.Phrase + "\"")
 	return
 }
 
 func (t *Thop) DeleteSelect() (err error) {
-	t.log.Debug("Called DeleteSelect")
+	t.log.Debug("Called delete with select")
 	return
 }
 
 func (t *Thop) EditSearch(act Search) (err error) {
-	t.log.Debug("Called EditSearch with phrase \"" + act.Phrase + "\"")
+	t.log.Debug("Called edit with search phrase \"" + act.Phrase + "\"")
 	return
 }
 
 func (t *Thop) EditSelect() (err error) {
-	t.log.Debug("Called EditSelect")
+	t.log.Debug("Called edit with select")
 	return
 }
 
 func (t *Thop) KillSearch(act Search) (err error) {
-	t.log.Debug("Called KillSearch with phrase \"" + act.Phrase + "\"")
+	t.log.Debug("Called kill with search phrase \"" + act.Phrase + "\"")
 	return
 }
 
 func (t *Thop) KillSelect() (err error) {
-	t.log.Debug("Called KillSelect")
+	t.log.Debug("Called kill with select")
 	return
 }
 
 func (t *Thop) OpenSearch(act Search) (err error) {
-	t.log.Debug("Called OpenSearch with phrase \"" + act.Phrase + "\"")
+	t.log.Debug("Called open with search phrase \"" + act.Phrase + "\"")
 	return
 }
 
 func (t *Thop) OpenSelect() (err error) {
-	t.log.Debug("Called OpenSelect")
+	t.log.Info("Called open with select")
 
 	var entries []selector.Entry
 

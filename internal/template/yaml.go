@@ -7,13 +7,16 @@ import (
 
 type YamlStorage struct {
 	log log.Logger
+	config *TemplateConfig
 }
 
 func NewYamlStorage(
 	log log.Logger,
+	config *TemplateConfig,
 ) template.FileStorage {
 	return &YamlStorage{
 		log: log,
+		config: config,
 	}
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"thop/internal/log"
 	"thop/internal/multiplexer"
 	"thop/internal/platform"
@@ -8,7 +9,6 @@ import (
 	"thop/internal/template"
 
 	pkg_log "thop/pkg/log"
-	pkg_platform "thop/pkg/platform"
 	"thop/pkg/thop"
 
 	"go.uber.org/dig"
@@ -20,6 +20,7 @@ func dependencies() []any {
 		thop.New,
 
 		groupLogger,
+		templateConfig,
 
 		selector.NewFzfSelector,
 		template.NewYamlStorage,
@@ -46,14 +47,32 @@ func autowireThop() *thop.Thop {
 	return autowired
 }
 
-func groupLogger(openFile pkg_platform.OpenFileFn) pkg_log.Logger {
+func groupLogger() pkg_log.Logger {
 	loggers := []pkg_log.Logger{}
 
-	fileLogger, err := log.NewFileLogger(log.LogFile("thop.log"), openFile)
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		panic(err)
+	}
+
+	path := dir + "/thop/thop-new.log"
+
+	fileLogger, err := log.NewFileLogger(log.LogFile(path), os.OpenFile)
 	if err == nil {
 		loggers = append(loggers, fileLogger)
 	}
 
 	loggers = append(loggers, log.NewEchoLogger(log.Debug))
 	return log.NewGroupLogger(loggers)
+}
+
+func templateConfig() *template.TemplateConfig {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		panic(err)
+	}
+
+	return &template.TemplateConfig{
+		FileStoragePath: dir + "/thop/templates",
+	}
 }
