@@ -20,10 +20,22 @@ func SystemOpenFile() platform.OpenFileFn {
 }
 
 func SystemExec() platform.ExecFn {
-	return Exec
+	return execImpl
 }
 
-func Exec(cmd *exec.Cmd) (string, int, error) {
+func execImpl(cmd *exec.Cmd) (string, int, error) {
 	res, err := cmd.Output()
 	return string(res), cmd.ProcessState.ExitCode(), err
+}
+
+func SystemMkdirAll() platform.MkdirAllFn {
+	return mkdirAllImpl
+}
+
+func mkdirAllImpl(path string) error {
+	return os.MkdirAll(path, 0755)
+}
+
+func SystemReadDir() platform.ReadDirFn {
+	return os.ReadDir
 }

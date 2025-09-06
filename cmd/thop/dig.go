@@ -30,6 +30,8 @@ func dependencies() []any {
 		platform.SystemGetwd,
 		platform.SystemOpenFile,
 		platform.SystemExec,
+		platform.SystemMkdirAll,
+		platform.SystemReadDir,
 	}
 }
 
