@@ -60,7 +60,12 @@ func (s *FzfSelector) SelectFrom(
 		if record.tag == tagActive {
 			name = name + " (Active)"
 		}
-		name += "\n"
+		name += "\n" // newline character separates entries in fzf
+
+		// avoid duplicates, they should not be allowed into the system, and if they appear ignore them
+		if recordMap[name] != nil {
+			continue
+		}
 
 		recordMap[name] = record.Entry
 		input.WriteString(name)
@@ -73,6 +78,7 @@ func (s *FzfSelector) SelectFrom(
 	out, exitCode, err := s.exec(cmd)
 	if exitCode == 130 {
 		s.log.Debug("Selector cancelled")
+		err = nil // for now just ignore the error
 		return
 	} else if err != nil {
 		s.log.Debug("Selector failed with error \"" + err.Error() + "\"")
