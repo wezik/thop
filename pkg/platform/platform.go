@@ -2,8 +2,10 @@ package platform
 
 import (
 	"os"
+	"os/exec"
 )
 
-type ExitFn func(code int)
+type ExitFn func(int)
 type GetwdFn func() (string, error)
-type OpenFileFn func(name string, flag int, perm os.FileMode) (*os.File, error)
+type OpenFileFn func(string, int, os.FileMode) (*os.File, error)
+type ExecFn func(*exec.Cmd) (string, int, error)

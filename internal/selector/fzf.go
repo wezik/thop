@@ -2,19 +2,26 @@ package selector
 
 import (
 	"bytes"
+	"os/exec"
 	"slices"
 	"strings"
 	"thop/pkg/log"
+	"thop/pkg/platform"
 	"thop/pkg/selector"
 )
 
 type FzfSelector struct {
 	log log.Logger
+	exec platform.ExecFn
 }
 
-func NewFzfSelector(log log.Logger) selector.Selector {
+func NewFzfSelector(
+	log log.Logger,
+	exec platform.ExecFn,
+) selector.Selector {
 	return &FzfSelector{
 		log: log,
+		exec: exec,
 	}
 }
 
@@ -59,11 +66,26 @@ func (s *FzfSelector) SelectFrom(
 		input.WriteString(name)
 	}
 
-	// TODO: Actually call fzf via cmd.Exec here
+	cmd := exec.Command("fzf")
+	cmd.Stdin = &input
+	cmd.Args = append(cmd.Args, "--prompt", resolveOperation(operation))
 
-	// TODO: temp remove
-	s.log.Debug("Fzf input: \"" + input.String() + "\"")
-	result = entries[0] 
+	out, exitCode, err := s.exec(cmd)
+	if exitCode == 130 {
+		s.log.Debug("Selector cancelled")
+		return
+	} else if err != nil {
+		s.log.Debug("Selector failed with error \"" + err.Error() + "\"")
+		return
+	}
+
+	result, ok := recordMap[out]
+	if !ok {
+		s.log.Debug("Selector result not found")
+		return
+	}
+
+	s.log.Debug("Selector selected \"" + result.EntryName() + "\"")
 
 	return
 }
@@ -104,4 +126,23 @@ func sortByTag(a, b record) int {
 
 	// sort case-insensitive ascending
 	return strings.Compare(bName, aName)
+}
+
+func resolveOperation(operation selector.Operation) string {
+	switch operation {
+	case selector.OperationOpen:
+		return "Open > "
+
+	case selector.OperationEdit:
+		return "Edit > "
+
+	case selector.OperationDelete:
+		return "Delete > "
+
+	case selector.OperationKill:
+		return "Kill > "
+
+	default:
+		panic("unhandled operation")
+	}
 }

@@ -28,6 +28,7 @@ func dependencies() []any {
 		platform.SystemExit,
 		platform.SystemGetwd,
 		platform.SystemOpenFile,
+		platform.SystemExec,
 	}
 }
 
