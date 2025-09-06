@@ -1,32 +1,27 @@
 package template
 
-type FilePath string
-
-type File struct {
-	name string
-	path FilePath
-}
-
-func (f *File) Name() string {
-	return f.name
-}
-
-func (f *File) Path() FilePath {
-	return f.path
-}
-
-func NewFile(name string, filePath string) *File {
-	return &File{
-		name: name,
-		path: FilePath(filePath),
-	}
-}
-
-type FileStorage interface {
-	List() ([]*File, error)
-	LoadTemplate(FilePath) *Template
-}
+type Version int
 
 type Template struct {
-	Name string
+	FilePath    string    `yaml:"-"`
+	Version     Version   `yaml:"version"`
+	Name        string    `yaml:"name"`
+	SessionName string    `yaml:"session_name,omitempty"`
+	Path        string    `yaml:"path"`
+	Commands    []string  `yaml:"run"`
+	Windows     []*Window `yaml:"windows"`
+}
+
+type Window struct {
+	Name     string   `yaml:"name"`
+	Path     string   `yaml:"path"`
+	Layout   string   `yaml:"layout"`
+	Commands []string `yaml:"run"`
+	Panes    []*Pane  `yaml:"panes"`
+}
+
+type Pane struct {
+	Active   bool     `yaml:"active,omitempty"`
+	Commands []string `yaml:"run"`
+	Path     string   `yaml:"path"`
 }
