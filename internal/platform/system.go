@@ -39,3 +39,11 @@ func mkdirAllImpl(path string) error {
 func SystemReadDir() platform.ReadDirFn {
 	return os.ReadDir
 }
+
+func SystemWriteFile() platform.WriteFileFn {
+	return writeFileImpl
+}
+
+func writeFileImpl(path string, bytes []byte) error {
+	return os.WriteFile(path, bytes, 0644)
+}

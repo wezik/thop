@@ -18,11 +18,9 @@ type Template struct {
 
 func DefaultTemplate(name, path string) *Template {
 	return &Template{
-		filePath:    "",
-		version:     V1,
-		name:        name,
-		sessionName: name,
-		path:        path,
+		version: V1,
+		name:    name,
+		path:    path,
 		windows: []*Window{
 			{
 				panes: []*Pane{{}},

@@ -2,17 +2,21 @@ package template
 
 import (
 	"path"
+	"path/filepath"
 	"strings"
 	"thop/pkg/log"
 	"thop/pkg/platform"
 	"thop/pkg/template"
+
+	"github.com/goccy/go-yaml"
 )
 
 type YamlStorage struct {
-	log      log.Logger
-	config   *TemplateConfig
-	mkdirAll platform.MkdirAllFn
-	readDir  platform.ReadDirFn
+	log       log.Logger
+	config    *TemplateConfig
+	mkdirAll  platform.MkdirAllFn
+	readDir   platform.ReadDirFn
+	writeFile platform.WriteFileFn
 }
 
 func NewYamlStorage(
@@ -20,18 +24,37 @@ func NewYamlStorage(
 	config *TemplateConfig,
 	mkdirAll platform.MkdirAllFn,
 	readDir platform.ReadDirFn,
+	writeFile platform.WriteFileFn,
 ) template.FileStorage {
 	return &YamlStorage{
-		log:      log,
-		config:   config,
-		mkdirAll: mkdirAll,
-		readDir:  readDir,
+		log:       log,
+		config:    config,
+		mkdirAll:  mkdirAll,
+		readDir:   readDir,
+		writeFile: writeFile,
 	}
 }
 
+// TODO: this implementation for now is replacing the file if it already exists
+// this is not ideal, but don't care for now, will maybe split to "new" and "update" later
 func (s *YamlStorage) Save(template *template.Template) (err error) {
 	s.log.Debug("Saving template \"" + template.Name() + "\"")
-	return
+
+	// ensure exists
+	if err = s.mkdirAll(s.config.FileStoragePath); err != nil {
+		return
+	}
+
+	filePath := filepath.Join(s.config.FileStoragePath, fileSafeName(template.Name()))
+
+	// write yaml
+	yamlTemplate := mapToYamlTemplate(template)
+	bytes, err := yaml.Marshal(yamlTemplate)
+	if err != nil {
+		return
+	}
+
+	return s.writeFile(filePath, bytes)
 }
 
 func (s *YamlStorage) List() (results []*template.File, err error) {
@@ -67,7 +90,7 @@ func (s *YamlStorage) listTemplatesFromRoot(root string) (results []*template.Fi
 
 		if isYamlFile(file.Name()) {
 			path := path.Join(root, file.Name())
-			templateFile := template.NewFile(normalizeName(file.Name()), path)
+			templateFile := mapToTemplateFile(file, path)
 			results = append(results, templateFile)
 		}
 	}
@@ -77,11 +100,4 @@ func (s *YamlStorage) listTemplatesFromRoot(root string) (results []*template.Fi
 
 func isYamlFile(name string) bool {
 	return strings.HasSuffix(name, ".yaml") || strings.HasSuffix(name, ".yml")
-}
-
-func normalizeName(fileName string) string {
-	name := strings.TrimSuffix(fileName, ".yaml")
-	name = strings.TrimSuffix(name, ".yml")
-	name = strings.ReplaceAll(name, "_", " ")
-	return name
 }

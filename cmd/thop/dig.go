@@ -32,6 +32,7 @@ func dependencies() []any {
 		platform.SystemExec,
 		platform.SystemMkdirAll,
 		platform.SystemReadDir,
+		platform.SystemWriteFile,
 	}
 }
 
