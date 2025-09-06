@@ -29,6 +29,11 @@ func NewYamlStorage(
 	}
 }
 
+func (s *YamlStorage) Save(template *template.Template) (err error) {
+	s.log.Debug("Saving template \"" + template.Name() + "\"")
+	return
+}
+
 func (s *YamlStorage) List() (results []*template.File, err error) {
 	s.log.Debug("Listing template files")
 
@@ -43,9 +48,7 @@ func (s *YamlStorage) List() (results []*template.File, err error) {
 
 func (s *YamlStorage) LoadTemplate(path template.FilePath) *template.Template {
 	s.log.Debug("Loading template from path \"" + string(path) + "\"")
-	return &template.Template{
-		Name: "/path/file1.yaml",
-	}
+	return nil
 }
 
 func (s *YamlStorage) listTemplatesFromRoot(root string) (results []*template.File, err error) {

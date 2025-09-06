@@ -55,6 +55,9 @@ func (t *Thop) Create(act CreateTemplate) (err error) {
 		name = path
 	}
 
+	templ := template.DefaultTemplate(name, path)
+	err = t.templateFileStorage.Save(templ)
+
 	return
 }
 

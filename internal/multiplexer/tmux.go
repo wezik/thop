@@ -20,7 +20,7 @@ func NewTmuxMultiplexer(
 }
 
 func (m *TmuxMultiplexer) AttachTemplate(templ *template.Template) (err error) {
-	m.log.Debug("Attaching to template \"" + templ.Name + "\"")
+	m.log.Debug("Attaching to template \"" + templ.Name() + "\"")
 	return
 }
 
