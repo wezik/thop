@@ -1,7 +1,6 @@
 package main
 
 import (
-	"thop/pkg/action"
 	"thop/pkg/thop"
 
 	"github.com/spf13/cobra"
@@ -30,7 +29,7 @@ func subCommands(thop *thop.Thop) []*cobra.Command {
 	}
 }
 
-func killSession(thop *thop.Thop) *cobra.Command {
+func killSession(t *thop.Thop) *cobra.Command {
 	var name string
 
 	command := &cobra.Command{
@@ -39,12 +38,12 @@ func killSession(thop *thop.Thop) *cobra.Command {
 		Aliases: []string{"k", "kill"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if name != "" {
-				search := action.Search{
+				search := thop.Search{
 					Phrase: name,
 				}
-				return thop.KillSearch(search)
+				return t.KillSearch(search)
 			}
-			return thop.KillSelect()
+			return t.KillSelect()
 		},
 	}
 
@@ -53,7 +52,7 @@ func killSession(thop *thop.Thop) *cobra.Command {
 	return command
 }
 
-func createTemplate(thop *thop.Thop) *cobra.Command {
+func createTemplate(t *thop.Thop) *cobra.Command {
 	var name string
 	var path string
 
@@ -62,11 +61,11 @@ func createTemplate(thop *thop.Thop) *cobra.Command {
 		Short:   "Create session template",
 		Aliases: []string{"c", "a", "add", "new"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			createTemplate := action.CreateTemplate{
+			createTemplate := thop.CreateTemplate{
 				Name: name,
 				Path: path,
 			}
-			return thop.Create(createTemplate)
+			return t.Create(createTemplate)
 		},
 	}
 
@@ -76,7 +75,7 @@ func createTemplate(thop *thop.Thop) *cobra.Command {
 	return command
 }
 
-func deleteTemplate(thop *thop.Thop) *cobra.Command {
+func deleteTemplate(t *thop.Thop) *cobra.Command {
 	var name string
 
 	command := &cobra.Command{
@@ -85,12 +84,12 @@ func deleteTemplate(thop *thop.Thop) *cobra.Command {
 		Aliases: []string{"d", "delete"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if name != "" {
-				search := action.Search{
+				search := thop.Search{
 					Phrase: name,
 				}
-				return thop.DeleteSearch(search)
+				return t.DeleteSearch(search)
 			}
-			return thop.DeleteSelect()
+			return t.DeleteSelect()
 		},
 	}
 
@@ -99,7 +98,7 @@ func deleteTemplate(thop *thop.Thop) *cobra.Command {
 	return command
 }
 
-func editTemplate(thop *thop.Thop) *cobra.Command {
+func editTemplate(t *thop.Thop) *cobra.Command {
 	var name string
 
 	command := &cobra.Command{
@@ -108,12 +107,12 @@ func editTemplate(thop *thop.Thop) *cobra.Command {
 		Aliases: []string{"e", "edit"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if name != "" {
-				search := action.Search{
+				search := thop.Search{
 					Phrase: name,
 				}
-				return thop.EditSearch(search)
+				return t.EditSearch(search)
 			}
-			return thop.EditSelect()
+			return t.EditSelect()
 		},
 	}
 
@@ -122,7 +121,7 @@ func editTemplate(thop *thop.Thop) *cobra.Command {
 	return command
 }
 
-func openTemplate(thop *thop.Thop) *cobra.Command {
+func openTemplate(t *thop.Thop) *cobra.Command {
 	var name string
 
 	command := &cobra.Command{
@@ -131,12 +130,12 @@ func openTemplate(thop *thop.Thop) *cobra.Command {
 		Aliases: []string{"o", "open"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if name != "" {
-				search := action.Search{
+				search := thop.Search{
 					Phrase: name,
 				}
-				return thop.OpenSearch(search)
+				return t.OpenSearch(search)
 			}
-			return thop.OpenSelect()
+			return t.OpenSelect()
 		},
 	}
 

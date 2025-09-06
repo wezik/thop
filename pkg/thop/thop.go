@@ -1,13 +1,21 @@
 package thop
 
 import (
-	"thop/pkg/action"
 	"thop/pkg/log"
 	"thop/pkg/multiplexer"
 	"thop/pkg/platform"
 	"thop/pkg/selector"
 	"thop/pkg/template"
 )
+
+type CreateTemplate struct {
+	Name string
+	Path string
+}
+
+type Search struct {
+	Phrase string
+}
 
 type Thop struct {
 	log                 log.Logger
@@ -33,7 +41,7 @@ func New(
 	}
 }
 
-func (t *Thop) Create(act action.CreateTemplate) (err error) {
+func (t *Thop) Create(act CreateTemplate) (err error) {
 	t.log.Debug("Called Create with name \"" + act.Name + "\" and path \"" + act.Path + "\"")
 	path := act.Path
 	if path == "" {
@@ -50,7 +58,7 @@ func (t *Thop) Create(act action.CreateTemplate) (err error) {
 	return
 }
 
-func (t *Thop) DeleteSearch(act action.Search) (err error) {
+func (t *Thop) DeleteSearch(act Search) (err error) {
 	t.log.Debug("Called DeleteSearch with phrase \"" + act.Phrase + "\"")
 	return
 }
@@ -60,7 +68,7 @@ func (t *Thop) DeleteSelect() (err error) {
 	return
 }
 
-func (t *Thop) EditSearch(act action.Search) (err error) {
+func (t *Thop) EditSearch(act Search) (err error) {
 	t.log.Debug("Called EditSearch with phrase \"" + act.Phrase + "\"")
 	return
 }
@@ -70,7 +78,7 @@ func (t *Thop) EditSelect() (err error) {
 	return
 }
 
-func (t *Thop) KillSearch(act action.Search) (err error) {
+func (t *Thop) KillSearch(act Search) (err error) {
 	t.log.Debug("Called KillSearch with phrase \"" + act.Phrase + "\"")
 	return
 }
@@ -80,7 +88,7 @@ func (t *Thop) KillSelect() (err error) {
 	return
 }
 
-func (t *Thop) OpenSearch(act action.Search) (err error) {
+func (t *Thop) OpenSearch(act Search) (err error) {
 	t.log.Debug("Called OpenSearch with phrase \"" + act.Phrase + "\"")
 	return
 }
