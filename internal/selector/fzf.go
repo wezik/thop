@@ -59,9 +59,12 @@ func (s *FzfSelector) SelectFrom(
 		input.WriteString(name)
 	}
 
-	println(input.String())
-
 	// TODO: Actually call fzf via cmd.Exec here
+
+	// TODO: temp remove
+	s.log.Debug("Fzf input: \"" + input.String() + "\"")
+	result = entries[0] 
+
 	return
 }
 

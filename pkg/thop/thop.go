@@ -3,6 +3,7 @@ package thop
 import (
 	"thop/pkg/action"
 	"thop/pkg/log"
+	"thop/pkg/multiplexer"
 	"thop/pkg/platform"
 	"thop/pkg/selector"
 	"thop/pkg/template"
@@ -12,6 +13,7 @@ type Thop struct {
 	log                 log.Logger
 	selector            selector.Selector
 	templateFileStorage template.FileStorage
+	multiplexer         multiplexer.Multiplexer
 	getwd               platform.GetwdFn
 }
 
@@ -19,12 +21,14 @@ func New(
 	log log.Logger,
 	selector selector.Selector,
 	templateFileStorage template.FileStorage,
+	multiplexer multiplexer.Multiplexer,
 	getwd platform.GetwdFn,
 ) *Thop {
 	return &Thop{
 		log:                 log,
 		selector:            selector,
 		templateFileStorage: templateFileStorage,
+		multiplexer:         multiplexer,
 		getwd:               getwd,
 	}
 }
@@ -91,6 +95,9 @@ func (t *Thop) OpenSelect() (err error) {
 		panic(err)
 	}
 
+	// TODO: Add pulling of active sessions from multiplexer and in addition to that
+	//       match active sessions with template files to not duplicate entries
+
 	for _, templateFile := range templateFiles {
 		entries = append(entries, &selector.TemplateEntry{
 			File: templateFile,
@@ -98,7 +105,19 @@ func (t *Thop) OpenSelect() (err error) {
 		})
 	}
 
-	t.selector.SelectFrom(entries, selector.OperationOpen)
+	var entry selector.Entry
+	if entry, err = t.selector.SelectFrom(entries, selector.OperationOpen); err != nil {
+		panic(err)
+	}
+
+	switch entry := entry.(type) {
+	case *selector.TemplateEntry:
+		template := t.templateFileStorage.LoadTemplate(entry.File.Path())
+		t.multiplexer.AttachTemplate(template)
+
+	case *selector.SessionEntry:
+		t.multiplexer.AttachSession(entry.Session)
+	}
 
 	return
 }

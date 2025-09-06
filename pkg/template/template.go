@@ -1,25 +1,32 @@
 package template
 
+type FilePath string
+
 type File struct {
 	name     string
-	filePath string
+	path FilePath
 }
 
 func (f *File) Name() string {
 	return f.name
 }
 
-func (f *File) FilePath() string {
-	return f.filePath
+func (f *File) Path() FilePath {
+	return f.path
 }
 
 func NewFile(name string, filePath string) *File {
 	return &File{
 		name:     name,
-		filePath: filePath,
+		path: FilePath(filePath),
 	}
 }
 
 type FileStorage interface {
 	List() ([]*File, error)
+	LoadTemplate(FilePath) *Template
+}
+
+type Template struct {
+	Name     string
 }

@@ -2,9 +2,11 @@ package main
 
 import (
 	"thop/internal/log"
+	"thop/internal/multiplexer"
 	"thop/internal/platform"
 	"thop/internal/selector"
 	"thop/internal/template"
+
 	pkg_log "thop/pkg/log"
 	pkg_platform "thop/pkg/platform"
 	"thop/pkg/thop"
@@ -20,7 +22,8 @@ func dependencies() []any {
 		groupLogger,
 
 		selector.NewFzfSelector,
-		template.NewFileSystemStorage,
+		template.NewYamlStorage,
+		multiplexer.NewTmuxMultiplexer,
 
 		platform.SystemExit,
 		platform.SystemGetwd,
