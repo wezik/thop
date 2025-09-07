@@ -5,13 +5,13 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
-	"thop/internal/domain/log"
 	"thop/internal/adapters/platform"
+	"thop/internal/domain/log"
 	"thop/internal/domain/selector"
 )
 
 type FzfSelector struct {
-	log  log.Logger
+	log      log.Logger
 	platform platform.Platform
 }
 
@@ -20,7 +20,7 @@ func NewFzfSelector(
 	platform platform.Platform,
 ) selector.Selector {
 	return &FzfSelector{
-		log:  log,
+		log:      log,
 		platform: platform,
 	}
 }

@@ -46,11 +46,47 @@ func listGoFilesFromTree(root string) []string {
 	return files
 }
 
-func TestAdapterDependencies(t *testing.T) {
+func Test_CmdDependencies(t *testing.T) {
+	// given
+	files := listGoFilesFromTree("../../cmd/")
+	restrictedImportPaths := []string{
+		"/test/",
+		"/tools/",
+	}
+	type ImportEntry struct {
+		ImportPath string
+		FilePath   string
+	}
+
+	// when
+	var dependencies []ImportEntry
+	for _, file := range files {
+		imports := listImports(file)
+		for _, imp := range imports {
+			dependencies = append(dependencies, ImportEntry{
+				ImportPath: imp,
+				FilePath:   file,
+			})
+		}
+	}
+
+	// then
+	t.Run("no restricted dependencies", func(t *testing.T) {
+		for _, dep := range dependencies {
+			if slices.Contains(restrictedImportPaths, dep.ImportPath) {
+				t.Errorf("%s depends on %s", dep.FilePath, dep.ImportPath)
+			}
+		}
+	})
+}
+
+func Test_AdapterDependencies(t *testing.T) {
 	// given
 	files := listGoFilesFromTree("../../internal/adapters/")
 	restrictedImportPaths := []string{
 		"/cmd/",
+		"/test/",
+		"/tools/",
 		"\"github.com/spf13/cobra\"",
 		"\"go.uber.org/dig\"",
 	}
@@ -96,12 +132,14 @@ func TestAdapterDependencies(t *testing.T) {
 	})
 }
 
-func TestPkgDependencies(t *testing.T) {
+func Test_PkgDependencies(t *testing.T) {
 	// given
 	files := listGoFilesFromTree("../../internal/domain/")
 	restrictedImportPaths := []string{
 		"/cmd/",
 		"/internal/adapters/",
+		"/test/",
+		"/tools/",
 		"\"github.com/spf13/cobra\"",
 		"\"go.uber.org/dig\"",
 	}
@@ -139,5 +177,3 @@ func TestPkgDependencies(t *testing.T) {
 		}
 	})
 }
-
-

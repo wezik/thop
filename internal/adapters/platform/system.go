@@ -16,7 +16,7 @@ type Platform interface {
 	ReadFile(string) ([]byte, error)
 }
 
-type SystemPlatform struct {}
+type SystemPlatform struct{}
 
 func NewSystemPlatform() Platform {
 	return &SystemPlatform{}

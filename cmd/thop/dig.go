@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
+	"thop/internal/adapters/platform"
 	"thop/internal/domain/log"
 	"thop/internal/domain/thop"
-	"thop/internal/adapters/platform"
 
 	logAdapters "thop/internal/adapters/log"
 	multiplexerAdapters "thop/internal/adapters/multiplexer"

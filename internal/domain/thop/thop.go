@@ -23,7 +23,7 @@ type Thop struct {
 	selector            selector.Selector
 	templateFileStorage template.FileStorage
 	multiplexer         multiplexer.Multiplexer
-	DefaultDirectory 	string
+	DefaultDirectory    string
 }
 
 type DefaultDirectory = string

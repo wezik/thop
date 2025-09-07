@@ -4,17 +4,17 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"thop/internal/domain/log"
 	"thop/internal/adapters/platform"
+	"thop/internal/domain/log"
 	"thop/internal/domain/template"
 
 	"github.com/goccy/go-yaml"
 )
 
 type YamlStorage struct {
-	log       log.Logger
-	config    *TemplateConfig
-	platform  platform.Platform
+	log      log.Logger
+	config   *TemplateConfig
+	platform platform.Platform
 }
 
 func NewYamlStorage(
@@ -23,9 +23,9 @@ func NewYamlStorage(
 	platform platform.Platform,
 ) template.FileStorage {
 	return &YamlStorage{
-		log:       log,
-		config:    config,
-		platform:  platform,
+		log:      log,
+		config:   config,
+		platform: platform,
 	}
 }
 
