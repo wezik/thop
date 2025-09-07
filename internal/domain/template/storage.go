@@ -25,5 +25,5 @@ func NewFile(name string, filePath string) *File {
 type FileStorage interface {
 	List() ([]*File, error)
 	LoadTemplate(FilePath) (*Template, error)
-	Save(*Template) error
+	Save(*Template) (*Template, error)
 }

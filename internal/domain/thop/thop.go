@@ -44,7 +44,7 @@ func New(
 	}
 }
 
-func (t *Thop) Create(act CreateTemplate) (err error) {
+func (t *Thop) Create(act CreateTemplate) (templ *template.Template, err error) {
 	t.log.Info("Called Create with name \"" + act.Name + "\" and path \"" + act.Path + "\"")
 	path := act.Path
 	if path == "" {
@@ -56,8 +56,8 @@ func (t *Thop) Create(act CreateTemplate) (err error) {
 		name = path
 	}
 
-	templ := template.DefaultTemplate(name, path)
-	err = t.templateFileStorage.Save(templ)
+	templ = template.DefaultTemplate(name, path)
+	templ, err = t.templateFileStorage.Save(templ)
 
 	return
 }

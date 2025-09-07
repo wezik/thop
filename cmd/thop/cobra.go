@@ -65,7 +65,8 @@ func createTemplate(t *thop.Thop) *cobra.Command {
 				Name: name,
 				Path: path,
 			}
-			return t.Create(createTemplate)
+			_, err := t.Create(createTemplate)
+			return err
 		},
 	}
 

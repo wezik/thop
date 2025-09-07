@@ -31,22 +31,25 @@ func NewYamlStorage(
 
 // TODO: this implementation for now is replacing the file if it already exists
 // this is not ideal, but don't care for now, will maybe split to "new" and "update" later
-func (s *YamlStorage) Save(template *template.Template) (err error) {
+func (s *YamlStorage) Save(templ *template.Template) (saved *template.Template, err error) {
 	// ensure exists
 	if err = s.platform.MkdirAll(s.config.FileStoragePath); err != nil {
 		return
 	}
 
-	filePath := filepath.Join(s.config.FileStoragePath, fileSafeName(template.Name()))
+	filePath := filepath.Join(s.config.FileStoragePath, fileSafeName(templ.Name()))
 
-	// write yaml
-	yamlTemplate := mapToYamlTemplate(template)
+	yamlTemplate := mapToYamlTemplate(templ)
 	bytes, err := yaml.Marshal(yamlTemplate)
 	if err != nil {
 		return
 	}
 
-	return s.platform.WriteFile(filePath, bytes)
+	if err = s.platform.WriteFile(filePath, bytes); err != nil {
+		return
+	}
+
+	return mapToTemplate(yamlTemplate, template.FilePath(filePath)), nil
 }
 
 func (s *YamlStorage) List() (results []*template.File, err error) {
