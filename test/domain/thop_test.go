@@ -14,11 +14,6 @@ import (
 func Test_Create(t *testing.T) {
 	const templateVersion = template.V1
 
-	type TestCase struct {
-		name string
-		path string
-	}
-
 	// given
 	defaultDirectory := "default/directory"
 	for _, testCase := range []struct {

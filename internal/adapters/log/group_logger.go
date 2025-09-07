@@ -41,8 +41,8 @@ func (s *GroupLogger) Error(err error) {
 	}
 }
 
-func (g *GroupLogger) Echo(msg string) {
-	for _, logger := range g.Loggers {
+func (s *GroupLogger) Echo(msg string) {
+	for _, logger := range s.Loggers {
 		if logger == nil {
 			continue
 		}
@@ -50,8 +50,8 @@ func (g *GroupLogger) Echo(msg string) {
 	}
 }
 
-func (g *GroupLogger) Debug(msg string, args ...any) {
-	for _, logger := range g.Loggers {
+func (s *GroupLogger) Debug(msg string, args ...any) {
+	for _, logger := range s.Loggers {
 		if logger == nil {
 			continue
 		}
