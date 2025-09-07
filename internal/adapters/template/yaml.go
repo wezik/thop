@@ -4,9 +4,9 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"thop/pkg/log"
-	"thop/pkg/platform"
-	"thop/pkg/template"
+	"thop/internal/domain/log"
+	"thop/internal/domain/platform"
+	"thop/internal/domain/template"
 
 	"github.com/goccy/go-yaml"
 )

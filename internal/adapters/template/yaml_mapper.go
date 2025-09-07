@@ -3,7 +3,7 @@ package template
 import (
 	"os"
 	"strings"
-	"thop/pkg/template"
+	"thop/internal/domain/template"
 )
 
 func mapToTemplate(yamlTemplate *YamlTemplate, filePath template.FilePath) *template.Template {

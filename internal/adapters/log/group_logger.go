@@ -1,7 +1,7 @@
 package log
 
 import (
-	"thop/pkg/log"
+	"thop/internal/domain/log"
 )
 
 type GroupLogger struct {

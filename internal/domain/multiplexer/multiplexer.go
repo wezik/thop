@@ -1,8 +1,8 @@
 package multiplexer
 
 import (
-	"thop/pkg/session"
-	"thop/pkg/template"
+	"thop/internal/domain/session"
+	"thop/internal/domain/template"
 )
 
 type Multiplexer interface {

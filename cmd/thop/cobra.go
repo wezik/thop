@@ -1,7 +1,7 @@
 package main
 
 import (
-	"thop/pkg/thop"
+	"thop/internal/domain/thop"
 
 	"github.com/spf13/cobra"
 )

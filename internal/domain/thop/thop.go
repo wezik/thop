@@ -2,11 +2,11 @@ package thop
 
 import (
 	"strconv"
-	"thop/pkg/log"
-	"thop/pkg/multiplexer"
-	"thop/pkg/platform"
-	"thop/pkg/selector"
-	"thop/pkg/template"
+	"thop/internal/domain/log"
+	"thop/internal/domain/multiplexer"
+	"thop/internal/domain/platform"
+	"thop/internal/domain/selector"
+	"thop/internal/domain/template"
 	"time"
 )
 

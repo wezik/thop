@@ -5,9 +5,9 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
-	"thop/pkg/log"
-	"thop/pkg/platform"
-	"thop/pkg/selector"
+	"thop/internal/domain/log"
+	"thop/internal/domain/platform"
+	"thop/internal/domain/selector"
 )
 
 type FzfSelector struct {

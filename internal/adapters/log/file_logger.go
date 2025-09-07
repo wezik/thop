@@ -4,8 +4,8 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"thop/pkg/log"
-	"thop/pkg/platform"
+	"thop/internal/domain/log"
+	"thop/internal/domain/platform"
 )
 
 type LogFile string

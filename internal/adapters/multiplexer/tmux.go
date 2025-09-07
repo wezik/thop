@@ -1,10 +1,10 @@
 package multiplexer
 
 import (
-	"thop/pkg/log"
-	"thop/pkg/multiplexer"
-	"thop/pkg/session"
-	"thop/pkg/template"
+	"thop/internal/domain/log"
+	"thop/internal/domain/multiplexer"
+	"thop/internal/domain/session"
+	"thop/internal/domain/template"
 )
 
 type TmuxMultiplexer struct {

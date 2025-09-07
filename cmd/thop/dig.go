@@ -2,14 +2,15 @@ package main
 
 import (
 	"os"
-	"thop/internal/log"
-	"thop/internal/multiplexer"
-	"thop/internal/platform"
-	"thop/internal/selector"
-	"thop/internal/template"
 
-	pkg_log "thop/pkg/log"
-	"thop/pkg/thop"
+	"thop/internal/domain/log"
+	"thop/internal/domain/thop"
+
+	logAdapters "thop/internal/adapters/log"
+	multiplexerAdapters "thop/internal/adapters/multiplexer"
+	platformAdapters "thop/internal/adapters/platform"
+	selectorAdapters "thop/internal/adapters/selector"
+	templateAdapters "thop/internal/adapters/template"
 
 	"go.uber.org/dig"
 )
@@ -17,16 +18,16 @@ import (
 // constructors provided to the container
 func dependencies() []any {
 	var groupedDependencies []any
-	groupedDependencies = append(groupedDependencies, platform.SystemFunctions()...)
+	groupedDependencies = append(groupedDependencies, platformAdapters.SystemFunctions()...)
 	dependencies := []any{
 		thop.New,
 
 		groupLogger,
 		templateConfig,
 
-		selector.NewFzfSelector,
-		template.NewYamlStorage,
-		multiplexer.NewTmuxMultiplexer,
+		selectorAdapters.NewFzfSelector,
+		templateAdapters.NewYamlStorage,
+		multiplexerAdapters.NewTmuxMultiplexer,
 	}
 
 	return append(groupedDependencies, dependencies...)
@@ -46,8 +47,8 @@ func autowireThop() *thop.Thop {
 	return autowired
 }
 
-func groupLogger() pkg_log.Logger {
-	loggers := []pkg_log.Logger{}
+func groupLogger() log.Logger {
+	loggers := []log.Logger{}
 
 	dir, err := os.UserConfigDir()
 	if err != nil {
@@ -56,22 +57,22 @@ func groupLogger() pkg_log.Logger {
 
 	path := dir + "/thop/thop-new.log"
 
-	fileLogger, err := log.NewFileLogger(log.LogFile(path), os.OpenFile)
+	fileLogger, err := logAdapters.NewFileLogger(logAdapters.LogFile(path), os.OpenFile)
 	if err == nil {
 		loggers = append(loggers, fileLogger)
 	}
 
-	loggers = append(loggers, log.NewEchoLogger(log.Debug))
-	return log.NewGroupLogger(loggers)
+	loggers = append(loggers, logAdapters.NewEchoLogger(logAdapters.Debug))
+	return logAdapters.NewGroupLogger(loggers)
 }
 
-func templateConfig() *template.TemplateConfig {
+func templateConfig() *templateAdapters.TemplateConfig {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		panic(err)
 	}
 
-	return &template.TemplateConfig{
+	return &templateAdapters.TemplateConfig{
 		FileStoragePath: dir + "/thop/templates",
 	}
 }

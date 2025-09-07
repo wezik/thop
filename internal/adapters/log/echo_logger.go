@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
-	"thop/pkg/log"
+	"thop/internal/domain/log"
 )
 
 type EchoLogLevel int

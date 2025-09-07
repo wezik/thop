@@ -23,7 +23,7 @@ func listImports(filePath string) []string {
 	return result
 }
 
-func listGoFilesInTree(root string) []string {
+func listGoFilesFromTree(root string) []string {
 	var files []string
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -46,9 +46,9 @@ func listGoFilesInTree(root string) []string {
 	return files
 }
 
-func TestInternalDependencies(t *testing.T) {
+func TestAdapterDependencies(t *testing.T) {
 	// given
-	files := listGoFilesInTree("../../internal/")
+	files := listGoFilesFromTree("../../internal/adapters/")
 	restrictedImportPaths := []string{
 		"/cmd/",
 		"\"github.com/spf13/cobra\"",
@@ -82,14 +82,14 @@ func TestInternalDependencies(t *testing.T) {
 	})
 
 	t.Run("no external logger dependencies", func(t *testing.T) {
-		allowedPath := "../../internal/log/"
+		allowedPath := "../../internal/adapters/log/"
 		for _, dep := range dependencies {
 			// skip logger implementations
 			if strings.Contains(dep.FilePath, allowedPath) {
 				continue
 			}
 
-			if strings.Contains(dep.ImportPath, "log") && dep.ImportPath != "\"thop/pkg/log\"" {
+			if strings.Contains(dep.ImportPath, "log") && dep.ImportPath != "\"thop/internal/domain/log\"" {
 				t.Errorf("%s depends on external logger implementation %s", dep.FilePath, dep.ImportPath)
 			}
 		}
@@ -98,10 +98,10 @@ func TestInternalDependencies(t *testing.T) {
 
 func TestPkgDependencies(t *testing.T) {
 	// given
-	files := listGoFilesInTree("../../pkg/")
+	files := listGoFilesFromTree("../../internal/domain/")
 	restrictedImportPaths := []string{
 		"/cmd/",
-		"/internal/",
+		"/internal/adapters/",
 		"\"github.com/spf13/cobra\"",
 		"\"go.uber.org/dig\"",
 	}
@@ -133,7 +133,7 @@ func TestPkgDependencies(t *testing.T) {
 
 	t.Run("no external logger dependencies", func(t *testing.T) {
 		for _, dep := range dependencies {
-			if strings.Contains(dep.ImportPath, "log") && dep.ImportPath != "\"thop/pkg/log\"" {
+			if strings.Contains(dep.ImportPath, "log") && dep.ImportPath != "\"thop/internal/domain/log\"" {
 				t.Errorf("%s depends on external logger implementation %s", dep.FilePath, dep.ImportPath)
 			}
 		}

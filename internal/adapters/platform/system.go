@@ -4,7 +4,7 @@ import (
 	"os"
 	"os/exec"
 
-	"thop/pkg/platform"
+	"thop/internal/domain/platform"
 )
 
 func SystemFunctions() []any {
