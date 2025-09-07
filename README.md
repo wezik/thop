@@ -93,8 +93,8 @@ template:
 All fields are optional unless stated as `(required)`
 
 ## Current state
-This project follows [Semantic Versioning](https://semver.org/), but currently it's at version v0 as it's in development.
-Destination is set but things can still change and break backwards compatibility; That includes templates they are not getting migrations until v1.
+This project follows [Semantic Versioning](https://semver.org/) and is currently in development (v0.x.x).
+Versioning is focused on tracking configuration templates.
 
 ### TODO's:
 - Integration tests
