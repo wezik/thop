@@ -12,3 +12,4 @@ type ExecFn func(*exec.Cmd) (string, int, error)
 type MkdirAllFn func(string) error
 type ReadDirFn func(string) ([]os.DirEntry, error)
 type WriteFileFn func(string, []byte) error
+type ReadFileFn func(string) ([]byte, error)

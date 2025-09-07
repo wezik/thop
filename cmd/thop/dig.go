@@ -16,7 +16,9 @@ import (
 
 // constructors provided to the container
 func dependencies() []any {
-	return []any{
+	var groupedDependencies []any
+	groupedDependencies = append(groupedDependencies, platform.SystemFunctions()...)
+	dependencies := []any{
 		thop.New,
 
 		groupLogger,
@@ -25,15 +27,9 @@ func dependencies() []any {
 		selector.NewFzfSelector,
 		template.NewYamlStorage,
 		multiplexer.NewTmuxMultiplexer,
-
-		platform.SystemExit,
-		platform.SystemGetwd,
-		platform.SystemOpenFile,
-		platform.SystemExec,
-		platform.SystemMkdirAll,
-		platform.SystemReadDir,
-		platform.SystemWriteFile,
 	}
+
+	return append(groupedDependencies, dependencies...)
 }
 
 func autowireThop() *thop.Thop {

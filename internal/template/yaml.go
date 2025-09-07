@@ -17,6 +17,7 @@ type YamlStorage struct {
 	mkdirAll  platform.MkdirAllFn
 	readDir   platform.ReadDirFn
 	writeFile platform.WriteFileFn
+	readFile  platform.ReadFileFn
 }
 
 func NewYamlStorage(
@@ -25,6 +26,7 @@ func NewYamlStorage(
 	mkdirAll platform.MkdirAllFn,
 	readDir platform.ReadDirFn,
 	writeFile platform.WriteFileFn,
+	readFile platform.ReadFileFn,
 ) template.FileStorage {
 	return &YamlStorage{
 		log:       log,
@@ -32,14 +34,13 @@ func NewYamlStorage(
 		mkdirAll:  mkdirAll,
 		readDir:   readDir,
 		writeFile: writeFile,
+		readFile:  readFile,
 	}
 }
 
 // TODO: this implementation for now is replacing the file if it already exists
 // this is not ideal, but don't care for now, will maybe split to "new" and "update" later
 func (s *YamlStorage) Save(template *template.Template) (err error) {
-	s.log.Debug("Saving template \"" + template.Name() + "\"")
-
 	// ensure exists
 	if err = s.mkdirAll(s.config.FileStoragePath); err != nil {
 		return
@@ -58,8 +59,6 @@ func (s *YamlStorage) Save(template *template.Template) (err error) {
 }
 
 func (s *YamlStorage) List() (results []*template.File, err error) {
-	s.log.Debug("Listing template files")
-
 	// ensure exists
 	if err = s.mkdirAll(s.config.FileStoragePath); err != nil {
 		return
@@ -69,9 +68,19 @@ func (s *YamlStorage) List() (results []*template.File, err error) {
 	return s.listTemplatesFromRoot(s.config.FileStoragePath)
 }
 
-func (s *YamlStorage) LoadTemplate(path template.FilePath) *template.Template {
-	s.log.Debug("Loading template from path \"" + string(path) + "\"")
-	return nil
+func (s *YamlStorage) LoadTemplate(path template.FilePath) (result *template.Template, err error) {
+	// ensure exists
+	bytes, err := s.readFile(string(path))
+	if err != nil {
+		return
+	}
+
+	var yamlTemplate YamlTemplate
+	if err = yaml.Unmarshal(bytes, &yamlTemplate); err != nil {
+		return
+	}
+
+	return mapToTemplate(&yamlTemplate, path), nil
 }
 
 func (s *YamlStorage) listTemplatesFromRoot(root string) (results []*template.File, err error) {

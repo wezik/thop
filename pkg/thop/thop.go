@@ -1,11 +1,13 @@
 package thop
 
 import (
+	"strconv"
 	"thop/pkg/log"
 	"thop/pkg/multiplexer"
 	"thop/pkg/platform"
 	"thop/pkg/selector"
 	"thop/pkg/template"
+	"time"
 )
 
 type CreateTemplate struct {
@@ -42,7 +44,7 @@ func New(
 }
 
 func (t *Thop) Create(act CreateTemplate) (err error) {
-	t.log.Debug("Called Create with name \"" + act.Name + "\" and path \"" + act.Path + "\"")
+	t.log.Info("Called Create with name \"" + act.Name + "\" and path \"" + act.Path + "\"")
 	path := act.Path
 	if path == "" {
 		if path, err = t.getwd(); err != nil {
@@ -99,35 +101,58 @@ func (t *Thop) OpenSearch(act Search) (err error) {
 func (t *Thop) OpenSelect() (err error) {
 	t.log.Info("Called open with select")
 
-	var entries []selector.Entry
+	start := time.Now()
 
 	templateFiles, err := t.templateFileStorage.List()
 	if err != nil {
 		panic(err)
 	}
 
+	t.log.Debug("Discovered " + strconv.Itoa(len(templateFiles)) + " template files in the tree in " + time.Since(start).String())
+
+	start = time.Now()
+
+	// load all templates (necessary to get active sessions and names)
+	templates := make(map[string]*template.Template)
+	for _, templateFile := range templateFiles {
+		templ, err := t.templateFileStorage.LoadTemplate(templateFile.Path())
+		if err != nil {
+			// TODO: Collect failed templates and notify? Otherwise just ignore
+			continue
+		}
+
+		templates[string(templateFile.Path())] = templ
+	}
+
+	t.log.Debug("Loaded " + strconv.Itoa(len(templates)) + " templates in " + time.Since(start).String())
+
 	// TODO: Add pulling of active sessions from multiplexer and in addition to that
 	//       match active sessions with template files to not duplicate entries
 
-	for _, templateFile := range templateFiles {
-		entries = append(entries, &selector.TemplateEntry{
-			File:     templateFile,
-			IsActive: false,
-		})
+	var entries []*selector.Entry
+
+	for key, templ := range templates {
+		if templ != nil {
+			entry := selector.NewEntry(templ.Name(), key, selector.TagTemplate)
+			entries = append(entries, entry)
+		}
 	}
 
-	var entry selector.Entry
-	if entry, err = t.selector.SelectFrom(entries, selector.OperationOpen); err != nil {
+	var result *selector.Entry
+	if result, err = t.selector.SelectFrom(entries, selector.OperationOpen); err != nil {
+		// TODO: Handling of cancellation
 		panic(err)
 	}
 
-	switch entry := entry.(type) {
-	case *selector.TemplateEntry:
-		template := t.templateFileStorage.LoadTemplate(entry.File.Path())
-		t.multiplexer.AttachTemplate(template)
+	if result == nil {
+		return
+	}
 
-	case *selector.SessionEntry:
-		t.multiplexer.AttachSession(entry.Session)
+	switch result.Tag() {
+	case selector.TagTemplate:
+		if templ, ok := templates[result.Key()]; ok {
+			t.multiplexer.AttachTemplate(templ)
+		}
 	}
 
 	return

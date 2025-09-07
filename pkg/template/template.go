@@ -7,7 +7,7 @@ const (
 )
 
 type Template struct {
-	filePath    string
+	filePath    FilePath
 	version     Version
 	name        string
 	sessionName string
@@ -30,7 +30,7 @@ func DefaultTemplate(name, path string) *Template {
 }
 
 func NewTemplate(
-	filePath string,
+	filePath FilePath,
 	version Version,
 	name string,
 	sessionName string,
@@ -49,7 +49,7 @@ func NewTemplate(
 	}
 }
 
-func (t *Template) FilePath() string {
+func (t *Template) FilePath() FilePath {
 	return t.filePath
 }
 

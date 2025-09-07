@@ -6,7 +6,7 @@ import (
 	"thop/pkg/template"
 )
 
-func mapToTemplate(yamlTemplate *YamlTemplate, filePath string) *template.Template {
+func mapToTemplate(yamlTemplate *YamlTemplate, filePath template.FilePath) *template.Template {
 	var windows []*template.Window
 	for _, window := range yamlTemplate.Windows {
 		windows = append(windows, mapToWindow(window))

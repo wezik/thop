@@ -2,6 +2,8 @@ package log
 
 import (
 	"fmt"
+	"path/filepath"
+	"runtime"
 	"thop/pkg/log"
 )
 
@@ -48,7 +50,15 @@ func (e *EchoLogger) Echo(msg string) {
 }
 
 func (e *EchoLogger) Debug(msg string, args ...any) {
+	pc, _, _, ok := runtime.Caller(2) // 2 since it's called first by the group logger
+	var fnName string
+	if !ok {
+		fnName = "???"
+	} else {
+		fnName = filepath.Base(runtime.FuncForPC(pc).Name())
+	}
+
 	if e.level >= Debug {
-		fmt.Println("Debug: " + msg)
+		fmt.Println("Debug [" + fnName + "]: " + msg)
 	}
 }

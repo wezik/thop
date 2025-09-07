@@ -1,29 +1,37 @@
 package selector
 
-import (
-	"thop/pkg/session"
-	"thop/pkg/template"
+type Tag string
+
+const (
+	TagTemplate       Tag = "template"
+	TagActiveTemplate Tag = "active-template"
+	TagActiveSession  Tag = "active-session"
 )
 
-type Entry interface {
-	EntryName() string
+type Entry struct {
+	name string
+	key  string
+	tag  Tag
 }
 
-type TemplateEntry struct {
-	*template.File
-	IsActive bool
+func NewEntry(name string, key string, tag Tag) *Entry {
+	return &Entry{
+		name: name,
+		key:  key,
+		tag:  tag,
+	}
 }
 
-func (t *TemplateEntry) EntryName() string {
-	return t.Name()
+func (e *Entry) Name() string {
+	return e.name
 }
 
-type SessionEntry struct {
-	*session.Session
+func (e *Entry) Key() string {
+	return e.key
 }
 
-func (s *SessionEntry) EntryName() string {
-	return s.Name()
+func (e *Entry) Tag() Tag {
+	return e.tag
 }
 
 type Operation int
@@ -36,5 +44,5 @@ const (
 )
 
 type Selector interface {
-	SelectFrom([]Entry, Operation) (Entry, error)
+	SelectFrom([]*Entry, Operation) (*Entry, error)
 }

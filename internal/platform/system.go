@@ -7,6 +7,19 @@ import (
 	"thop/pkg/platform"
 )
 
+func SystemFunctions() []any {
+	return []any{
+		SystemExit,
+		SystemGetwd,
+		SystemOpenFile,
+		SystemExec,
+		SystemMkdirAll,
+		SystemReadDir,
+		SystemWriteFile,
+		SystemReadFile,
+	}
+}
+
 func SystemExit() platform.ExitFn {
 	return os.Exit
 }
@@ -46,4 +59,8 @@ func SystemWriteFile() platform.WriteFileFn {
 
 func writeFileImpl(path string, bytes []byte) error {
 	return os.WriteFile(path, bytes, 0644)
+}
+
+func SystemReadFile() platform.ReadFileFn {
+	return os.ReadFile
 }

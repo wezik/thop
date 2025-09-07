@@ -26,22 +26,13 @@ func NewFzfSelector(
 }
 
 type record struct {
-	selector.Entry
-	tag         tag
-	displayName string
+	*selector.Entry
 }
 
-type tag int
-
-const (
-	tagActive tag = iota
-	tagNone
-)
-
 func (s *FzfSelector) SelectFrom(
-	entries []selector.Entry,
+	entries []*selector.Entry,
 	operation selector.Operation,
-) (result selector.Entry, err error) {
+) (result *selector.Entry, err error) {
 
 	var records []record
 
@@ -52,13 +43,13 @@ func (s *FzfSelector) SelectFrom(
 
 	slices.SortFunc(records, sortByTag)
 
-	recordMap := make(map[string]selector.Entry)
+	recordMap := make(map[string]*selector.Entry)
 	var input bytes.Buffer
 
 	for _, record := range records {
-		name := record.displayName
-		if record.tag == tagActive {
-			name = name + " (Active)"
+		name := record.Name()
+		if record.Tag() == selector.TagActiveSession || record.Tag() == selector.TagActiveTemplate {
+			name = "(Active) " + name
 		}
 		name += "\n" // newline character separates entries in fzf
 
@@ -77,11 +68,12 @@ func (s *FzfSelector) SelectFrom(
 
 	out, exitCode, err := s.exec(cmd)
 	if exitCode == 130 {
-		s.log.Debug("Selector cancelled")
+		s.log.Info("Selector cancelled")
 		err = nil // for now just ignore the error
 		return
 	} else if err != nil {
-		s.log.Debug("Selector failed with error \"" + err.Error() + "\"")
+		s.log.Warn("Selector failed with error \"" + err.Error() + "\"")
+		s.log.Error(err)
 		return
 	}
 
@@ -91,44 +83,45 @@ func (s *FzfSelector) SelectFrom(
 		return
 	}
 
-	s.log.Debug("Selector selected \"" + result.EntryName() + "\"")
+	s.log.Info("Selector selected \"" + result.Name() + "\"")
+	s.log.Debug("Selector selected key \"" + result.Key() + "\"")
 
 	return
 }
 
-func format(s string) string {
-	return strings.ReplaceAll(s, "_", " ")
+func toRecord(entry *selector.Entry) record {
+	return record{
+		Entry: entry,
+	}
 }
 
-func toRecord(entry selector.Entry) record {
-	name := format(entry.EntryName())
-	tag := tagNone
+func getTagSortOrder(tag selector.Tag) int {
+	switch tag {
 
-	switch entry := entry.(type) {
-	case *selector.SessionEntry:
-		tag = tagActive
+	case selector.TagActiveTemplate:
+		return 0
 
-	case *selector.TemplateEntry:
-		if entry.IsActive {
-			tag = tagActive
-		}
-	}
+	case selector.TagActiveSession:
+		return 0
 
-	return record{
-		Entry:       entry,
-		tag:         tag,
-		displayName: name,
+	case selector.TagTemplate:
+		return 1
+
+	default:
+		return 99
 	}
 }
 
 func sortByTag(a, b record) int {
-	if a.tag != b.tag {
+	aTag := getTagSortOrder(a.Tag())
+	bTag := getTagSortOrder(b.Tag())
+	if aTag != bTag {
 		// sort ascending by tag first
-		return int(b.tag) - int(a.tag)
+		return bTag - aTag
 	}
 
-	aName := strings.ToLower(a.displayName)
-	bName := strings.ToLower(b.displayName)
+	aName := strings.ToLower(a.Name())
+	bName := strings.ToLower(b.Name())
 
 	// sort case-insensitive ascending
 	return strings.Compare(bName, aName)
