@@ -15,6 +15,7 @@ func main() {
 		"../internal/domain/selector/selector.go",
 		"../internal/domain/multiplexer/multiplexer.go",
 		"../internal/domain/template/storage.go",
+		"../internal/domain/template/service.go",
 		"../internal/adapters/platform/system.go",
 	}
 

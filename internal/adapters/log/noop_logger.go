@@ -7,12 +7,22 @@ func NewNoopLogger() *NoopLogger {
 	return &NoopLogger{}
 }
 
-func (l *NoopLogger) Debug(msg string, args ...any) {}
+func (l *NoopLogger) Debug(msg string, args ...any) {
+	// do nothing
+}
 
-func (l *NoopLogger) Echo(msg string) {}
+func (l *NoopLogger) Echo(msg string) {
+	// do nothing
+}
 
-func (l *NoopLogger) Error(err error) {}
+func (l *NoopLogger) Error(err error) {
+	// do nothing
+}
 
-func (l *NoopLogger) Info(msg string, args ...any) {}
+func (l *NoopLogger) Info(msg string, args ...any) {
+	// do nothing
+}
 
-func (l *NoopLogger) Warn(msg string, args ...any) {}
+func (l *NoopLogger) Warn(msg string, args ...any) {
+	// do nothing
+}

@@ -68,3 +68,18 @@ func (mr *MockMultiplexerMockRecorder) AttachTemplate(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AttachTemplate", reflect.TypeOf((*MockMultiplexer)(nil).AttachTemplate), arg0)
 }
+
+// ListSessions mocks base method.
+func (m *MockMultiplexer) ListSessions() ([]*session.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSessions")
+	ret0, _ := ret[0].([]*session.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSessions indicates an expected call of ListSessions.
+func (mr *MockMultiplexerMockRecorder) ListSessions() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSessions", reflect.TypeOf((*MockMultiplexer)(nil).ListSessions))
+}

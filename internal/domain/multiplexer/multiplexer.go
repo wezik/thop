@@ -8,4 +8,5 @@ import (
 type Multiplexer interface {
 	AttachTemplate(*template.Template) error
 	AttachSession(*session.Session) error
+	ListSessions() ([]*session.Session, error)
 }

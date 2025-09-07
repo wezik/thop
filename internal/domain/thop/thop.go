@@ -1,29 +1,22 @@
 package thop
 
 import (
-	"strconv"
 	"thop/internal/domain/log"
 	"thop/internal/domain/multiplexer"
 	"thop/internal/domain/selector"
+	"thop/internal/domain/session"
 	"thop/internal/domain/template"
-	"time"
 )
-
-type CreateTemplate struct {
-	Name string
-	Path string
-}
 
 type Search struct {
 	Phrase string
 }
 
 type Thop struct {
-	log                 log.Logger
-	selector            selector.Selector
-	templateFileStorage template.FileStorage
-	multiplexer         multiplexer.Multiplexer
-	DefaultDirectory    string
+	log             log.Logger
+	selector        selector.Selector
+	templateService template.TemplateService
+	multiplexer     multiplexer.Multiplexer
 }
 
 type DefaultDirectory = string
@@ -31,35 +24,20 @@ type DefaultDirectory = string
 func New(
 	log log.Logger,
 	selector selector.Selector,
-	templateFileStorage template.FileStorage,
+	templateService template.TemplateService,
 	multiplexer multiplexer.Multiplexer,
-	DefaultDirectory DefaultDirectory,
 ) *Thop {
 	return &Thop{
-		log:                 log,
-		selector:            selector,
-		templateFileStorage: templateFileStorage,
-		multiplexer:         multiplexer,
-		DefaultDirectory:    DefaultDirectory,
+		log:             log,
+		selector:        selector,
+		templateService: templateService,
+		multiplexer:     multiplexer,
 	}
 }
 
-func (t *Thop) Create(act CreateTemplate) (templ *template.Template, err error) {
+func (t *Thop) Create(act template.CreateTemplate) (templ *template.Template, err error) {
 	t.log.Info("Called Create with name \"" + act.Name + "\" and path \"" + act.Path + "\"")
-	path := act.Path
-	if path == "" {
-		path = t.DefaultDirectory
-	}
-
-	name := act.Name
-	if name == "" {
-		name = path
-	}
-
-	templ = template.DefaultTemplate(name, path)
-	templ, err = t.templateFileStorage.Save(templ)
-
-	return
+	return t.templateService.Create(act)
 }
 
 func (t *Thop) DeleteSearch(act Search) (err error) {
@@ -100,41 +78,31 @@ func (t *Thop) OpenSearch(act Search) (err error) {
 func (t *Thop) OpenSelect() (err error) {
 	t.log.Info("Called open with select")
 
-	start := time.Now()
-
-	templateFiles, err := t.templateFileStorage.List()
+	templates, err := t.templateService.List()
 	if err != nil {
 		panic(err)
 	}
 
-	t.log.Debug("Discovered " + strconv.Itoa(len(templateFiles)) + " template files in the tree in " + time.Since(start).String())
-
-	start = time.Now()
-
-	// load all templates (necessary to get active sessions and names)
-	templates := make(map[string]*template.Template)
-	for _, templateFile := range templateFiles {
-		templ, err := t.templateFileStorage.LoadTemplate(templateFile.Path())
-		if err != nil {
-			// TODO: Collect failed templates and notify? Otherwise just ignore
-			continue
-		}
-
-		templates[string(templateFile.Path())] = templ
-	}
-
-	t.log.Debug("Loaded " + strconv.Itoa(len(templates)) + " templates in " + time.Since(start).String())
-
-	// TODO: Add pulling of active sessions from multiplexer and in addition to that
-	//       match active sessions with template files to not duplicate entries
-
 	var entries []*selector.Entry
 
-	for key, templ := range templates {
-		if templ != nil {
-			entry := selector.NewEntry(templ.Name(), key, selector.TagTemplate)
-			entries = append(entries, entry)
-		}
+	templateEntries := make(map[*selector.Entry]*template.Template)
+	for _, template := range templates {
+		entry := selector.NewEntry(template.Name(), string(template.FilePath()), selector.TagTemplate)
+		templateEntries[entry] = template
+		entries = append(entries, entry)
+	}
+
+	sessions, err := t.multiplexer.ListSessions()
+	if err != nil {
+		panic(err)
+	}
+
+	sessionEntries := make(map[*selector.Entry]*session.Session)
+	for _, session := range sessions {
+		entry := selector.NewEntry(session.Name(), session.Name(), selector.TagActiveSession)
+		// TODO: Figure out a way to tag sessions when created from template to not duplicate entries here
+		sessionEntries[entry] = session
+		entries = append(entries, entry)
 	}
 
 	var result *selector.Entry
@@ -149,8 +117,12 @@ func (t *Thop) OpenSelect() (err error) {
 
 	switch result.Tag() {
 	case selector.TagTemplate:
-		if templ, ok := templates[result.Key()]; ok {
+		if templ, ok := templateEntries[result]; ok {
 			t.multiplexer.AttachTemplate(templ)
+		}
+	case selector.TagActiveSession:
+		if session, ok := sessionEntries[result]; ok {
+			t.multiplexer.AttachSession(session)
 		}
 	}
 

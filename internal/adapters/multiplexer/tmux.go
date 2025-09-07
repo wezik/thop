@@ -28,3 +28,8 @@ func (m *TmuxMultiplexer) AttachSession(ses *session.Session) (err error) {
 	m.log.Debug("Attaching to session \"" + ses.Name() + "\"")
 	return
 }
+
+func (m *TmuxMultiplexer) ListSessions() (sessions []*session.Session, err error) {
+	m.log.Debug("Listing active sessions")
+	return
+}

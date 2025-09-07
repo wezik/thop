@@ -1,6 +1,7 @@
 package main
 
 import (
+	"thop/internal/domain/template"
 	"thop/internal/domain/thop"
 
 	"github.com/spf13/cobra"
@@ -61,7 +62,7 @@ func createTemplate(t *thop.Thop) *cobra.Command {
 		Short:   "Create session template",
 		Aliases: []string{"c", "a", "add", "new"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			createTemplate := thop.CreateTemplate{
+			createTemplate := template.CreateTemplate{
 				Name: name,
 				Path: path,
 			}

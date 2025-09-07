@@ -5,6 +5,7 @@ import (
 
 	"thop/internal/adapters/platform"
 	"thop/internal/domain/log"
+	"thop/internal/domain/template"
 	"thop/internal/domain/thop"
 
 	logAdapters "thop/internal/adapters/log"
@@ -23,6 +24,8 @@ func dependencies() []any {
 		workingDirectory,
 		groupLogger,
 		templateConfig,
+
+		template.NewTemplateService,
 
 		selectorAdapters.NewFzfSelector,
 		templateAdapters.NewYamlStorage,

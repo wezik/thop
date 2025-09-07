@@ -82,3 +82,55 @@ func Test_Create(t *testing.T) {
 		})
 	}
 }
+
+func Test_OpenSelect(t *testing.T) {
+	// // given
+	// t.Run("opens existing template", func(t *testing.T) {
+	// 	// given
+	// 	ctrl := gomock.NewController(t)
+	// 	defer ctrl.Finish()
+	//
+	// 	mockLogger := log.NewNoopLogger()
+	// 	mockSelector := mock.NewMockSelector(ctrl)
+	// 	mockFileStorage := mock.NewMockFileStorage(ctrl)
+	// 	mockMultiplexer := mock.NewMockMultiplexer(ctrl)
+	//
+	// 	app := thop.New(
+	// 		mockLogger,
+	// 		mockSelector,
+	// 		mockFileStorage,
+	// 		mockMultiplexer,
+	// 		"",
+	// 		)
+	//
+	// 	savedTemplate := template.NewTemplate(
+	// 		"foo/bar/default_directory.yaml",
+	// 		templateVersion,
+	// 		"default",
+	// 		"default",
+	// 		"",
+	// 		[]string{},
+	// 		[]*template.Window{},
+	// 		)
+	//
+	// 	var capturedTemplate *template.Template
+	// 	mockFileStorage.
+	// 		EXPECT().
+	// 		Save(gomock.Any()).
+	// 		DoAndReturn(func(templ *template.Template) (*template.Template, error) {
+	// 			capturedTemplate = templ
+	// 			return savedTemplate, nil
+	// 		})
+	//
+	// 	// when
+	// 	err := app.OpenSelect()
+	//
+	// 	// then
+	// 	assert.Nil(t, err)
+	// 	assert.Equal(t, template.FilePath(""), capturedTemplate.FilePath())
+	// 	assert.Equal(t, testCase.expectedName, capturedTemplate.Name())
+	// 	assert.Equal(t, testCase.expectedPath, capturedTemplate.Path())
+	// 	assert.Equal(t, templateVersion, capturedTemplate.Version())
+	// 	assert.Equal(t, savedTemplate, templ)
+	// })
+}
