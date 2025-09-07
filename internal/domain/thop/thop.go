@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"thop/internal/domain/log"
 	"thop/internal/domain/multiplexer"
-	"thop/internal/domain/platform"
 	"thop/internal/domain/selector"
 	"thop/internal/domain/template"
 	"time"
@@ -24,22 +23,24 @@ type Thop struct {
 	selector            selector.Selector
 	templateFileStorage template.FileStorage
 	multiplexer         multiplexer.Multiplexer
-	getwd               platform.GetwdFn
+	DefaultDirectory 	string
 }
+
+type DefaultDirectory = string
 
 func New(
 	log log.Logger,
 	selector selector.Selector,
 	templateFileStorage template.FileStorage,
 	multiplexer multiplexer.Multiplexer,
-	getwd platform.GetwdFn,
+	DefaultDirectory DefaultDirectory,
 ) *Thop {
 	return &Thop{
 		log:                 log,
 		selector:            selector,
 		templateFileStorage: templateFileStorage,
 		multiplexer:         multiplexer,
-		getwd:               getwd,
+		DefaultDirectory:    DefaultDirectory,
 	}
 }
 
@@ -47,9 +48,7 @@ func (t *Thop) Create(act CreateTemplate) (err error) {
 	t.log.Info("Called Create with name \"" + act.Name + "\" and path \"" + act.Path + "\"")
 	path := act.Path
 	if path == "" {
-		if path, err = t.getwd(); err != nil {
-			return
-		}
+		path = t.DefaultDirectory
 	}
 
 	name := act.Name

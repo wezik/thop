@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"thop/internal/domain/log"
-	"thop/internal/domain/platform"
+	"thop/internal/adapters/platform"
 	"thop/internal/domain/template"
 
 	"github.com/goccy/go-yaml"
@@ -14,27 +14,18 @@ import (
 type YamlStorage struct {
 	log       log.Logger
 	config    *TemplateConfig
-	mkdirAll  platform.MkdirAllFn
-	readDir   platform.ReadDirFn
-	writeFile platform.WriteFileFn
-	readFile  platform.ReadFileFn
+	platform  platform.Platform
 }
 
 func NewYamlStorage(
 	log log.Logger,
 	config *TemplateConfig,
-	mkdirAll platform.MkdirAllFn,
-	readDir platform.ReadDirFn,
-	writeFile platform.WriteFileFn,
-	readFile platform.ReadFileFn,
+	platform platform.Platform,
 ) template.FileStorage {
 	return &YamlStorage{
 		log:       log,
 		config:    config,
-		mkdirAll:  mkdirAll,
-		readDir:   readDir,
-		writeFile: writeFile,
-		readFile:  readFile,
+		platform:  platform,
 	}
 }
 
@@ -42,7 +33,7 @@ func NewYamlStorage(
 // this is not ideal, but don't care for now, will maybe split to "new" and "update" later
 func (s *YamlStorage) Save(template *template.Template) (err error) {
 	// ensure exists
-	if err = s.mkdirAll(s.config.FileStoragePath); err != nil {
+	if err = s.platform.MkdirAll(s.config.FileStoragePath); err != nil {
 		return
 	}
 
@@ -55,12 +46,12 @@ func (s *YamlStorage) Save(template *template.Template) (err error) {
 		return
 	}
 
-	return s.writeFile(filePath, bytes)
+	return s.platform.WriteFile(filePath, bytes)
 }
 
 func (s *YamlStorage) List() (results []*template.File, err error) {
 	// ensure exists
-	if err = s.mkdirAll(s.config.FileStoragePath); err != nil {
+	if err = s.platform.MkdirAll(s.config.FileStoragePath); err != nil {
 		return
 	}
 
@@ -70,7 +61,7 @@ func (s *YamlStorage) List() (results []*template.File, err error) {
 
 func (s *YamlStorage) LoadTemplate(path template.FilePath) (result *template.Template, err error) {
 	// ensure exists
-	bytes, err := s.readFile(string(path))
+	bytes, err := s.platform.ReadFile(string(path))
 	if err != nil {
 		return
 	}
@@ -84,7 +75,7 @@ func (s *YamlStorage) LoadTemplate(path template.FilePath) (result *template.Tem
 }
 
 func (s *YamlStorage) listTemplatesFromRoot(root string) (results []*template.File, err error) {
-	files, err := s.readDir(root)
+	files, err := s.platform.ReadDir(root)
 	for _, file := range files {
 		if file.IsDir() {
 			var nestedResults []*template.File

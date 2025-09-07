@@ -3,64 +3,50 @@ package platform
 import (
 	"os"
 	"os/exec"
-
-	"thop/internal/domain/platform"
 )
 
-func SystemFunctions() []any {
-	return []any{
-		SystemExit,
-		SystemGetwd,
-		SystemOpenFile,
-		SystemExec,
-		SystemMkdirAll,
-		SystemReadDir,
-		SystemWriteFile,
-		SystemReadFile,
-	}
+// Platform abstraction for the system interactions
+type Platform interface {
+	Exit(int)
+	OpenFile(string, int, os.FileMode) (*os.File, error)
+	Exec(*exec.Cmd) (string, int, error)
+	MkdirAll(string) error
+	ReadDir(string) ([]os.DirEntry, error)
+	WriteFile(string, []byte) error
+	ReadFile(string) ([]byte, error)
 }
 
-func SystemExit() platform.ExitFn {
-	return os.Exit
+type SystemPlatform struct {}
+
+func NewSystemPlatform() Platform {
+	return &SystemPlatform{}
 }
 
-func SystemGetwd() platform.GetwdFn {
-	return os.Getwd
+func (s *SystemPlatform) Exit(code int) {
+	os.Exit(code)
 }
 
-func SystemOpenFile() platform.OpenFileFn {
-	return os.OpenFile
+func (s *SystemPlatform) OpenFile(path string, flag int, perm os.FileMode) (*os.File, error) {
+	return os.OpenFile(path, flag, perm)
 }
 
-func SystemExec() platform.ExecFn {
-	return execImpl
-}
-
-func execImpl(cmd *exec.Cmd) (string, int, error) {
+func (s *SystemPlatform) Exec(cmd *exec.Cmd) (string, int, error) {
 	res, err := cmd.Output()
 	return string(res), cmd.ProcessState.ExitCode(), err
 }
 
-func SystemMkdirAll() platform.MkdirAllFn {
-	return mkdirAllImpl
-}
-
-func mkdirAllImpl(path string) error {
+func (s *SystemPlatform) MkdirAll(path string) error {
 	return os.MkdirAll(path, 0755)
 }
 
-func SystemReadDir() platform.ReadDirFn {
-	return os.ReadDir
+func (s *SystemPlatform) ReadDir(path string) ([]os.DirEntry, error) {
+	return os.ReadDir(path)
 }
 
-func SystemWriteFile() platform.WriteFileFn {
-	return writeFileImpl
-}
-
-func writeFileImpl(path string, bytes []byte) error {
+func (s *SystemPlatform) WriteFile(path string, bytes []byte) error {
 	return os.WriteFile(path, bytes, 0644)
 }
 
-func SystemReadFile() platform.ReadFileFn {
-	return os.ReadFile
+func (s *SystemPlatform) ReadFile(path string) ([]byte, error) {
+	return os.ReadFile(path)
 }

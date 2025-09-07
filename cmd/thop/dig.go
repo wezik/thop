@@ -5,10 +5,10 @@ import (
 
 	"thop/internal/domain/log"
 	"thop/internal/domain/thop"
+	"thop/internal/adapters/platform"
 
 	logAdapters "thop/internal/adapters/log"
 	multiplexerAdapters "thop/internal/adapters/multiplexer"
-	platformAdapters "thop/internal/adapters/platform"
 	selectorAdapters "thop/internal/adapters/selector"
 	templateAdapters "thop/internal/adapters/template"
 
@@ -17,20 +17,19 @@ import (
 
 // constructors provided to the container
 func dependencies() []any {
-	var groupedDependencies []any
-	groupedDependencies = append(groupedDependencies, platformAdapters.SystemFunctions()...)
-	dependencies := []any{
+	return []any{
 		thop.New,
 
+		workingDirectory,
 		groupLogger,
 		templateConfig,
 
 		selectorAdapters.NewFzfSelector,
 		templateAdapters.NewYamlStorage,
 		multiplexerAdapters.NewTmuxMultiplexer,
-	}
 
-	return append(groupedDependencies, dependencies...)
+		platform.NewSystemPlatform,
+	}
 }
 
 func autowireThop() *thop.Thop {
@@ -47,23 +46,32 @@ func autowireThop() *thop.Thop {
 	return autowired
 }
 
-func groupLogger() log.Logger {
-	loggers := []log.Logger{}
-
-	dir, err := os.UserConfigDir()
+func workingDirectory() string {
+	dir, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
+	return dir
+}
 
-	path := dir + "/thop/thop-new.log"
+func groupLogger(
+	platform platform.Platform,
+) log.Logger {
+	return logAdapters.NewGroupLogger([]log.Logger{
+		fileLogger(platform),
+		logAdapters.NewEchoLogger(logAdapters.Debug),
+	})
+}
 
-	fileLogger, err := logAdapters.NewFileLogger(logAdapters.LogFile(path), os.OpenFile)
-	if err == nil {
-		loggers = append(loggers, fileLogger)
+func fileLogger(
+	platform platform.Platform,
+) log.Logger {
+	path := "/tmp/thop-new.log"
+	fileLogger, err := logAdapters.NewFileLogger(logAdapters.LogFile(path), platform)
+	if err != nil {
+		panic(err)
 	}
-
-	loggers = append(loggers, logAdapters.NewEchoLogger(logAdapters.Debug))
-	return logAdapters.NewGroupLogger(loggers)
+	return fileLogger
 }
 
 func templateConfig() *templateAdapters.TemplateConfig {

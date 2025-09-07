@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"thop/internal/domain/log"
-	"thop/internal/domain/platform"
+	"thop/internal/adapters/platform"
 )
 
 type LogFile string
@@ -16,14 +16,14 @@ type Slog struct {
 
 func NewFileLogger(
 	logFile LogFile,
-	openFile platform.OpenFileFn,
+	platform platform.Platform,
 ) (logger log.Logger, err error) {
 	var handler slog.Handler
 
 	if logFile == "" {
 		handler = slog.NewTextHandler(io.Discard, nil)
 	} else {
-		file, err := openFile(string(logFile), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		file, err := platform.OpenFile(string(logFile), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
 			return nil, err
 		}

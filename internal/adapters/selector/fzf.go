@@ -6,22 +6,22 @@ import (
 	"slices"
 	"strings"
 	"thop/internal/domain/log"
-	"thop/internal/domain/platform"
+	"thop/internal/adapters/platform"
 	"thop/internal/domain/selector"
 )
 
 type FzfSelector struct {
 	log  log.Logger
-	exec platform.ExecFn
+	platform platform.Platform
 }
 
 func NewFzfSelector(
 	log log.Logger,
-	exec platform.ExecFn,
+	platform platform.Platform,
 ) selector.Selector {
 	return &FzfSelector{
 		log:  log,
-		exec: exec,
+		platform: platform,
 	}
 }
 
@@ -66,7 +66,7 @@ func (s *FzfSelector) SelectFrom(
 	cmd.Stdin = &input
 	cmd.Args = append(cmd.Args, "--prompt", resolveOperation(operation))
 
-	out, exitCode, err := s.exec(cmd)
+	out, exitCode, err := s.platform.Exec(cmd)
 	if exitCode == 130 {
 		s.log.Info("Selector cancelled")
 		err = nil // for now just ignore the error
