@@ -62,14 +62,15 @@ func (t *TemplateServiceImpl) List() ([]*Template, error) {
 	}
 
 	var templates []*Template
-	var errors []error
+	// var errors []error
 	for _, file := range files {
 		templ, err := t.fileStorage.LoadTemplate(file.Path())
 		if err != nil {
-			errors = append(errors, err)
-		} else {
-			templates = append(templates, templ)
+			// errors = append(errors, err)
+			continue
 		}
+
+		templates = append(templates, templ)
 	}
 
 	// TODO: Log templates failing to load
