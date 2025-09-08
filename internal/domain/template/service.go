@@ -9,9 +9,10 @@ type TemplateService interface {
 	Create(CreateTemplate) (*Template, error)
 	Delete(FilePath) error
 	Edit(FilePath) (*Template, error)
-	Find(FilePath) (*Template, error)
+	Find(name string) (*Template, error)
 	List() ([]*Template, error)
 	ListFiles() ([]*File, error)
+	Load(FilePath) (*Template, error)
 	Update(*Template) (*Template, error)
 }
 
@@ -50,7 +51,7 @@ func (t *TemplateServiceImpl) Edit(path FilePath) (*Template, error) {
 	return nil, nil
 }
 
-func (t *TemplateServiceImpl) Find(path FilePath) (*Template, error) {
+func (t *TemplateServiceImpl) Find(name string) (*Template, error) {
 	return nil, nil
 }
 
@@ -78,6 +79,10 @@ func (t *TemplateServiceImpl) List() ([]*Template, error) {
 
 func (t *TemplateServiceImpl) ListFiles() ([]*File, error) {
 	return t.fileStorage.List()
+}
+
+func (t *TemplateServiceImpl) Load(path FilePath) (*Template, error) {
+	return nil, nil
 }
 
 func (t *TemplateServiceImpl) Update(templ *Template) (*Template, error) {

@@ -85,18 +85,18 @@ func (mr *MockTemplateServiceMockRecorder) Edit(arg0 any) *gomock.Call {
 }
 
 // Find mocks base method.
-func (m *MockTemplateService) Find(arg0 template.FilePath) (*template.Template, error) {
+func (m *MockTemplateService) Find(name string) (*template.Template, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Find", arg0)
+	ret := m.ctrl.Call(m, "Find", name)
 	ret0, _ := ret[0].(*template.Template)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Find indicates an expected call of Find.
-func (mr *MockTemplateServiceMockRecorder) Find(arg0 any) *gomock.Call {
+func (mr *MockTemplateServiceMockRecorder) Find(name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockTemplateService)(nil).Find), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockTemplateService)(nil).Find), name)
 }
 
 // List mocks base method.
@@ -127,6 +127,21 @@ func (m *MockTemplateService) ListFiles() ([]*template.File, error) {
 func (mr *MockTemplateServiceMockRecorder) ListFiles() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockTemplateService)(nil).ListFiles))
+}
+
+// Load mocks base method.
+func (m *MockTemplateService) Load(arg0 template.FilePath) (*template.Template, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Load", arg0)
+	ret0, _ := ret[0].(*template.Template)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Load indicates an expected call of Load.
+func (mr *MockTemplateServiceMockRecorder) Load(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockTemplateService)(nil).Load), arg0)
 }
 
 // Update mocks base method.

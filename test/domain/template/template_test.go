@@ -10,6 +10,71 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func Test_TemplateCreation(t *testing.T) {
+
+	t.Run("creates template", func(t *testing.T) {
+		// given
+		defaultDirectory := "default/directory"
+		savedPath := template.FilePath("some/saved/path")
+		expectedVersion := template.V1
+		for _, testCase := range []struct {
+			name         string
+			expectedName string
+			path         string
+			expectedPath string
+		}{
+			// in short name should default to path, path should default to pre-set directory
+			{name: "", path: "", expectedName: defaultDirectory, expectedPath: defaultDirectory},
+			{name: "test name", path: "", expectedName: "test name", expectedPath: defaultDirectory},
+			{name: "", path: "test/directory", expectedName: "test/directory", expectedPath: "test/directory"},
+			{name: "test name", path: "test/directory", expectedName: "test name", expectedPath: "test/directory"},
+		} {
+
+			t.Run("with name \""+testCase.name+"\" and path \""+testCase.path+"\"", func(t *testing.T) {
+				// and given
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+
+				mockFileStorage := mock.NewMockFileStorage(ctrl)
+
+				mockFileStorage.EXPECT().
+					Save(gomock.Any()).
+					DoAndReturn(func(templ *template.Template) (*template.Template, error) {
+						saved := template.NewTemplate(
+							savedPath,
+							templ.Version(),
+							templ.Name(),
+							templ.SessionName(),
+							templ.Path(),
+							templ.Commands(),
+							templ.Windows(),
+						)
+						return saved, nil
+					})
+
+				service := template.NewTemplateService(
+					mockFileStorage,
+					defaultDirectory,
+				)
+
+				// when
+				templ, err := service.Create(template.CreateTemplate{
+					Name: testCase.name,
+					Path: testCase.path,
+				})
+
+				// then
+				assert.Nil(t, err)
+				assert.Equal(t, savedPath, templ.FilePath())
+				assert.Equal(t, testCase.expectedName, templ.Name())
+				assert.Equal(t, testCase.expectedPath, templ.Path())
+				assert.Equal(t, expectedVersion, templ.Version())
+			})
+
+		}
+	})
+}
+
 func Test_TemplateListing(t *testing.T) {
 	t.Run("lists templates", func(t *testing.T) {
 		// given
