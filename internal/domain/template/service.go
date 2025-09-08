@@ -52,7 +52,7 @@ func (t *TemplateServiceImpl) Edit(path FilePath) (*Template, error) {
 }
 
 func (t *TemplateServiceImpl) Find(name string) (*Template, error) {
-	return nil, nil
+	return t.fileStorage.Find(name)
 }
 
 func (t *TemplateServiceImpl) List() ([]*Template, error) {
@@ -83,7 +83,7 @@ func (t *TemplateServiceImpl) ListFiles() ([]*File, error) {
 }
 
 func (t *TemplateServiceImpl) Load(path FilePath) (*Template, error) {
-	return nil, nil
+	return t.fileStorage.LoadTemplate(path)
 }
 
 func (t *TemplateServiceImpl) Update(templ *Template) (*Template, error) {

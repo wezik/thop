@@ -23,6 +23,7 @@ func NewFile(name string, filePath string) *File {
 }
 
 type FileStorage interface {
+	Find(string) (*Template, error)
 	List() ([]*File, error)
 	LoadTemplate(FilePath) (*Template, error)
 	Save(*Template) (*Template, error)

@@ -11,7 +11,6 @@ import (
 )
 
 func Test_TemplateCreation(t *testing.T) {
-
 	t.Run("creates template", func(t *testing.T) {
 		// given
 		defaultDirectory := "default/directory"
@@ -72,6 +71,66 @@ func Test_TemplateCreation(t *testing.T) {
 			})
 
 		}
+	})
+}
+
+func Test_TemplateFinding(t *testing.T) {
+	t.Run("finds template", func(t *testing.T) {
+		// given
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockFileStorage := mock.NewMockFileStorage(ctrl)
+		expectedTemplate := template.NewTemplate(
+			"foo/bar/1",
+			template.V1,
+			"1",
+			"",
+			"",
+			[]string{},
+			[]*template.Window{},
+		)
+
+		mockFileStorage.EXPECT().
+			Find("foo/bar/1").
+			Return(expectedTemplate, nil)
+
+		service := template.NewTemplateService(
+			mockFileStorage,
+			"",
+		)
+
+		// when
+		templ, err := service.Find("foo/bar/1")
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, expectedTemplate, templ)
+	})
+
+	t.Run("propagates file finding error", func(t *testing.T) {
+		// given
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockFileStorage := mock.NewMockFileStorage(ctrl)
+		expectedErr := errors.New("not found")
+
+		mockFileStorage.EXPECT().
+			Find("foo/bar/1").
+			Return(nil, expectedErr)
+
+		service := template.NewTemplateService(
+			mockFileStorage,
+			"",
+		)
+
+		// when
+		templ, err := service.Find("foo/bar/1")
+
+		// then
+		assert.Nil(t, templ)
+		assert.Equal(t, expectedErr, err)
 	})
 }
 
@@ -243,5 +302,69 @@ func Test_FileListing(t *testing.T) {
 		// then
 		assert.Nil(t, files)
 		assert.Equal(t, err, expectedErr)
+	})
+}
+
+func Test_TemplateLoading(t *testing.T) {
+	t.Run("loads template", func(t *testing.T) {
+		// given
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		filePath := template.FilePath("foo/bar/1")
+
+		mockFileStorage := mock.NewMockFileStorage(ctrl)
+		expectedTemplate := template.NewTemplate(
+			filePath,
+			template.V1,
+			"1",
+			"",
+			"",
+			[]string{},
+			[]*template.Window{},
+		)
+
+		mockFileStorage.EXPECT().
+			LoadTemplate(filePath).
+			Return(expectedTemplate, nil)
+
+		service := template.NewTemplateService(
+			mockFileStorage,
+			"",
+		)
+
+		// when
+		templ, err := service.Load(filePath)
+
+		// then
+		assert.Nil(t, err)
+		assert.Equal(t, expectedTemplate, templ)
+	})
+
+	t.Run("propagates file loading error", func(t *testing.T) {
+		// given
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		filePath := template.FilePath("foo/bar/1")
+
+		mockFileStorage := mock.NewMockFileStorage(ctrl)
+		expectedErr := errors.New("not found")
+
+		mockFileStorage.EXPECT().
+			LoadTemplate(filePath).
+			Return(nil, expectedErr)
+
+		service := template.NewTemplateService(
+			mockFileStorage,
+			"",
+		)
+
+		// when
+		templ, err := service.Load(filePath)
+
+		// then
+		assert.Nil(t, templ)
+		assert.Equal(t, expectedErr, err)
 	})
 }

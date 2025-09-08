@@ -77,6 +77,10 @@ func (s *YamlStorage) LoadTemplate(path template.FilePath) (result *template.Tem
 	return mapToTemplate(&yamlTemplate, path), nil
 }
 
+func (s *YamlStorage) Find(name string) (result *template.Template, err error) {
+	return nil, nil
+}
+
 func (s *YamlStorage) listTemplatesFromRoot(root string) (results []*template.File, err error) {
 	files, err := s.platform.ReadDir(root)
 	for _, file := range files {
