@@ -22,7 +22,7 @@ jobs:
           check-latest: true
 
       - name: 📦 Build
-        run: go build -o thop -v .
+        run: go build -o thop -v ./cmd/thop
 
       - name: 📦 Upload binary to release
         uses: softprops/action-gh-release@v2

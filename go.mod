@@ -4,10 +4,10 @@ go 1.25.1
 
 require (
 	github.com/goccy/go-yaml v1.18.0
-	github.com/google/uuid v1.6.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/dig v1.19.0
+	go.uber.org/mock v0.6.0
 )
 
 require (
@@ -15,6 +15,5 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
