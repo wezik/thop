@@ -62,7 +62,10 @@ func (t *Template) Name() string {
 }
 
 func (t *Template) SessionName() string {
-	return t.sessionName
+	if t.sessionName != "" {
+		return t.sessionName
+	}
+	return t.name
 }
 
 func (t *Template) Path() string {

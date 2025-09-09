@@ -1,6 +1,7 @@
 package thop
 
 import (
+	"slices"
 	"thop/internal/domain/log"
 	"thop/internal/domain/multiplexer"
 	"thop/internal/domain/selector"
@@ -83,25 +84,38 @@ func (t *Thop) OpenSelect() (err error) {
 		panic(err)
 	}
 
-	var entries []*selector.Entry
-
-	templateEntries := make(map[*selector.Entry]*template.Template)
-	for _, template := range templates {
-		entry := selector.NewEntry(template.Name(), string(template.FilePath()), selector.TagTemplate)
-		templateEntries[entry] = template
-		entries = append(entries, entry)
-	}
-
 	sessions, err := t.multiplexer.ListSessions()
 	if err != nil {
 		panic(err)
 	}
 
-	sessionEntries := make(map[*selector.Entry]*session.Session)
+	// Quick lookup for templates since they are already loaded
+	templateEntries := make(map[*selector.Entry]*template.Template)
+	var entries []*selector.Entry
+
+	for _, templ := range templates {
+		// In case template session is already active, tag it as active template
+
+		// To not iterate twice we check if deletion was successful, since we would need to remove it anyway
+		lenBefore := len(sessions)
+		sessions = slices.DeleteFunc(sessions, func(session *session.Session) bool {
+			return templ.SessionName() == session.Name()
+		})
+		if lenBefore != len(sessions) {
+			entry := selector.NewEntry(templ.Name(), templ.SessionName(), selector.TagActiveTemplate)
+			entries = append(entries, entry)
+			continue
+		}
+
+		// Otherwise create regular template entry
+		entry := selector.NewEntry(templ.Name(), string(templ.FilePath()), selector.TagTemplate)
+		entries = append(entries, entry)
+		templateEntries[entry] = templ
+	}
+
+	// Append leftover sessions
 	for _, session := range sessions {
 		entry := selector.NewEntry(session.Name(), session.Name(), selector.TagActiveSession)
-		// TODO: Figure out a way to tag sessions when created from template to not duplicate entries here
-		sessionEntries[entry] = session
 		entries = append(entries, entry)
 	}
 
@@ -119,11 +133,12 @@ func (t *Thop) OpenSelect() (err error) {
 	case selector.TagTemplate:
 		if templ, ok := templateEntries[result]; ok {
 			t.multiplexer.AttachTemplate(templ)
+		} else {
+			panic("Selected template was not added to the lookup map") // Should never happen
 		}
-	case selector.TagActiveSession:
-		if session, ok := sessionEntries[result]; ok {
-			t.multiplexer.AttachSession(session)
-		}
+	case selector.TagActiveSession, selector.TagActiveTemplate:
+		sesh := session.NewSession(result.Name())
+		t.multiplexer.AttachSession(sesh)
 	}
 
 	return
